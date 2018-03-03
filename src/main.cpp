@@ -21,7 +21,7 @@ float camera_rotation_angle = 0;
 glm::vec3 eye (5, 0.09, 0);
 glm::vec3 target (0, 0, 0);
 glm::vec3 up (0, 1, 0);
-int view = 2;
+int view = 0;
 double cursor_x, cursor_y;
 
 Timer t60(1.0 / 60);
@@ -68,6 +68,7 @@ void tick_input(GLFWwindow *window) {
     int down  = glfwGetKey(window, GLFW_KEY_DOWN);
     int left  = glfwGetKey(window, GLFW_KEY_LEFT);
     int right = glfwGetKey(window, GLFW_KEY_RIGHT);
+    int space = glfwGetKey(window, GLFW_KEY_SPACE);
     int c = glfwGetKey(window, GLFW_KEY_C);
     glfwGetCursorPos(window, &cursor_x, &cursor_y);
     int mouse_left = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
@@ -89,6 +90,9 @@ void tick_input(GLFWwindow *window) {
     if (mouse_left) {
       // cout<<"mouse_left\n";
     }
+    if (space && boat.position.y <= -1.68) {
+      boat.position.y += 2;
+    }
     if (c) {
       view = (view + 1) % 4;
     }
@@ -97,7 +101,7 @@ unsigned long long int j = 0;
 void tick_elements() {
     boat.tick();
     // water.tick();
-    boat.position.y += 0.02*sin((++j)/7);
+
     camera_rotation_angle += 1;
     if (view == 0) {                                                //follow_view
       target.x = boat.position.x;
@@ -120,6 +124,10 @@ void tick_elements() {
       target.x = boat.position.x;
       target.z = boat.position.z;
     }
+    if (boat.position.y > -1.68) {
+      boat.position.y -= 0.1;
+    }
+    else boat.position.y += 0.02*sin((++j)/7);
     // cout<<cursor_x<<" "<<cursor_y<<endl;
 
 }
