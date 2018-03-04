@@ -1,14 +1,12 @@
 #include "main.h"
 
-#ifndef BALL_H
-#define BALL_H
+#ifndef SAIL_H
+#define SAIL_H
 
-
-class Ball {
+class Sail {
 public:
-    Ball() {}
-    Ball(float x, float y, float z, float length, float width, float height, color_t color);
-    // GLfloat vertex_buffer_data[];
+    Sail() {}
+    Sail(float x, float y, float z, float base, float height, float width, color_t color);
     glm::vec3 position;
     float rotation;
     void draw(glm::mat4 VP);
@@ -19,4 +17,4 @@ private:
     VAO *object;
 };
 
-#endif // BALL_H
+#endif // SAIL_H

@@ -45,7 +45,7 @@ Ball::Ball(float x, float y, float z,  float length, float width, float height, 
         -length, width, height,
          length,-width, height
     };
-
+    // this->vertex_buffer_data = vertex_buffer_data;
     this->object = create3DObject(GL_TRIANGLES, 12*3, vertex_buffer_data, color, GL_FILL);
 }
 

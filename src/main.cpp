@@ -1,6 +1,7 @@
 #include "main.h"
 #include "timer.h"
 #include "ball.h"
+#include "boat.h"
 
 using namespace std;
 
@@ -12,17 +13,26 @@ GLFWwindow *window;
 * Customizable functions *
 **************************/
 
-Ball boat;
-Ball rock;
-Ball water;
+// Ball boat;
+
+float random_number(float min, float max) {
+  return ((float(rand()) / float(RAND_MAX)) * (max - min)) + min;
+}
 
 float screen_zoom = 1, screen_center_x = 0, screen_center_y = 0;
 float camera_rotation_angle = 0;
-glm::vec3 eye (5, 0.09, 0);
+glm::vec3 eye (8, 2, 0);
 glm::vec3 target (0, 0, 0);
 glm::vec3 up (0, 1, 0);
 int view = 0;
+int is_wind = 0;
 double cursor_x, cursor_y;
+const int number_of_rocks = 100;
+
+Ball rocks[number_of_rocks];
+Ball water;
+Boat boat;
+
 
 Timer t60(1.0 / 60);
 
@@ -59,8 +69,10 @@ void draw() {
 
     // Scene render
     water.draw(VP);
-    boat.draw(VP);
-    rock.draw(VP);
+    boat.draw(VP, is_wind);
+    for (int i = 0; i < number_of_rocks; i++) {
+      rocks[i].draw(VP);
+    }
 }
 
 void tick_input(GLFWwindow *window) {
@@ -70,9 +82,15 @@ void tick_input(GLFWwindow *window) {
     int right = glfwGetKey(window, GLFW_KEY_RIGHT);
     int space = glfwGetKey(window, GLFW_KEY_SPACE);
     int c = glfwGetKey(window, GLFW_KEY_C);
+    int c_flag = 0;
     glfwGetCursorPos(window, &cursor_x, &cursor_y);
     int mouse_left = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
-
+    if (c == GLFW_PRESS) {
+      c_flag = 1;
+    } else c_flag = 0;
+    if (c == GLFW_RELEASE && c_flag) {
+      view = (view + 1) % 4;
+    }
     if (left) {
       boat.rotation += 1;
     }
@@ -80,12 +98,12 @@ void tick_input(GLFWwindow *window) {
       boat.rotation -= 1;
     }
     if (up) {
-      boat.position.x -= 0.05*cos(boat.rotation * M_PI / 180.0f);
-      boat.position.z += 0.05*sin(boat.rotation * M_PI / 180.0f);
+      boat.position.x -= 0.1*cos(boat.rotation * M_PI / 180.0f);
+      boat.position.z += 0.1*sin(boat.rotation * M_PI / 180.0f);
     }
     if (down) {
-      boat.position.x += 0.05*cos(boat.rotation * M_PI / 180.0f);
-      boat.position.z -= 0.05*sin(boat.rotation * M_PI / 180.0f);
+      boat.position.x += 0.1*cos(boat.rotation * M_PI / 180.0f);
+      boat.position.z -= 0.1*sin(boat.rotation * M_PI / 180.0f);
     }
     if (mouse_left) {
       // cout<<"mouse_left\n";
@@ -93,14 +111,15 @@ void tick_input(GLFWwindow *window) {
     if (space && boat.position.y <= -1.68) {
       boat.position.y += 2;
     }
-    if (c) {
-      view = (view + 1) % 4;
-    }
+
 }
+
 unsigned long long int j = 0;
 void tick_elements() {
     boat.tick();
     // water.tick();
+    // boat.sail1.rotation += 1;
+    // boat.sail2.rotation += 1;
 
     camera_rotation_angle += 1;
     if (view == 0) {                                                //follow_view
@@ -111,10 +130,15 @@ void tick_elements() {
     }
     if (view == 1) {                                                //boat_view
       eye = boat.position - glm::vec3(0.50, 0, 0);
-      target = boat.position - glm::vec3 (2, 0, 0);
+      target = boat.position - glm::vec3 (100, 0, 0);
+      target.x = boat.position.x - 2*cos(boat.rotation * M_PI / 180.0f);
+      target.z = boat.position.z + 2*sin(boat.rotation * M_PI / 180.0f);
+      eye.x = boat.position.x - 0.5*cos(boat.rotation * M_PI / 180.0f);
+      eye.z = boat.position.z + 0.5*sin(boat.rotation * M_PI / 180.0f);
+      eye.y += 0.5;
     }
     if (view == 2) {                                                //top_view
-      eye = boat.position + glm::vec3(0, 5, 0);
+      eye = boat.position + glm::vec3(0, 7, 0);
       target = boat.position;
       up.x = -cos(boat.rotation * M_PI / 180.0f);
       up.z = sin(boat.rotation * M_PI / 180.0f);
@@ -138,10 +162,15 @@ void initGL(GLFWwindow *window, int width, int height) {
     /* Objects should be created before any other gl function and shaders */
     // Create the models
 
-    boat       = Ball(1, -1.7, 0, 0.5, 0.5, 0.5, COLOR_RED);
-    rock       = Ball(2, -1.7, 0, 0.5, 0.5, 0.5, COLOR_BLACK);
+    // boat       = Ball(1, -1.7, 0, 0.7, 0.2, 0.5, COLOR_RED);
+    boat       = Boat(1, -1.7, 0);
     water       = Ball(0, -3, 0, 1000, 1, 1000, COLOR_BLUE);
-
+    int count_rocks = 0;
+    for (int i = 0; i < number_of_rocks; i++) {
+        float x = random_number(-500, 500);
+        float z = random_number(-500, 500);
+        rocks[count_rocks++] = Ball(x, -1.7, z, 0.5, 0.5, 0.5, COLOR_BLACK);
+    }
     // Create and compile our GLSL program from the shaders
     programID = LoadShaders("Sample_GL.vert", "Sample_GL.frag");
     // Get a handle for our "MVP" uniform
@@ -166,8 +195,8 @@ void initGL(GLFWwindow *window, int width, int height) {
 
 int main(int argc, char **argv) {
     srand(time(0));
-    int width  = 1000;
-    int height = 1000;
+    int width  = 1920;
+    int height = 1080;
 
     window = initGLFW(width, height);
 
@@ -201,10 +230,10 @@ bool detect_collision(bounding_box_t a, bounding_box_t b) {
 }
 
 void reset_screen() {
-    float top    = screen_center_y + 4 / screen_zoom;
-    float bottom = screen_center_y - 4 / screen_zoom;
-    float left   = screen_center_x - 4 / screen_zoom;
-    float right  = screen_center_x + 4 / screen_zoom;
+    float near = 0.01;
+    float far = 500;
+    float angle = M_PI/2;
+    float aspect_ratio = float(16/9);
     // Matrices.projection = glm::ortho(left, right, bottom, top, 0.1f, 500.0f);
-    Matrices.projection = glm::perspective(2.0, 1.0, 0.01, 100.0);
+    Matrices.projection = glm::perspective(angle, aspect_ratio, near, far);
 }
