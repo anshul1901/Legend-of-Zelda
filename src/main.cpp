@@ -147,6 +147,7 @@ void tick_elements() {
           boat.sail2.rotation += 1;
         }
       }
+      boat.position.x += 0.05;
     }
     if (is_wind == 2) {
       if (boat.sail1.rotation > 180) {
@@ -165,6 +166,7 @@ void tick_elements() {
           boat.sail2.rotation += 1;
         }
       }
+      boat.position.x -= 0.05;
     }
     if (is_wind == 3) {
       if (boat.sail1.rotation > 90) {
@@ -183,6 +185,7 @@ void tick_elements() {
           boat.sail2.rotation += 1;
         }
       }
+      boat.position.z -= 0.05;
     }
     if (is_wind == 4) {
       if (boat.sail1.rotation > 270) {
@@ -201,6 +204,7 @@ void tick_elements() {
           boat.sail2.rotation += 1;
         }
       }
+      boat.position.z += 0.05;
     }
 
       // boat.sail1.rotation = 0;
