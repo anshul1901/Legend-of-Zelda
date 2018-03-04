@@ -25,7 +25,7 @@ float camera_rotation_angle = 0;
 glm::vec3 eye (8, 2, 0);
 glm::vec3 target (0, 0, 0);
 glm::vec3 up (0, 1, 0);
-int view = 0;
+extern int view;
 int is_wind = 0;
 double cursor_x, cursor_y;
 const int number_of_rocks = 100;
@@ -83,17 +83,8 @@ void tick_input(GLFWwindow *window) {
     int left  = glfwGetKey(window, GLFW_KEY_LEFT);
     int right = glfwGetKey(window, GLFW_KEY_RIGHT);
     int space = glfwGetKey(window, GLFW_KEY_SPACE);
-    int c = glfwGetKey(window, GLFW_KEY_C);
-    int c_flag = 0;
     glfwGetCursorPos(window, &cursor_x, &cursor_y);
     int mouse_left = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
-    if (c == GLFW_PRESS) {
-    // view = (view + 1) % 4;
-      c_flag = 1;
-    } else c_flag = 0;
-    if (c == GLFW_RELEASE && c_flag) {
-      view = (view + 1) % 4;
-    }
     if (left) {
       boat.rotation += 1;
     }
@@ -130,7 +121,7 @@ void tick_elements() {
       boat.sail1.rotation = boat.rotation;
       boat.sail2.rotation = boat.rotation;
     }
-    if (is_wind == 1) {
+    if (is_wind == 1 || is_wind == 2) {
       if (boat.sail1.rotation > 0) {
         if (boat.sail1.rotation != 0) {
           boat.sail1.rotation -= 1;
@@ -147,28 +138,12 @@ void tick_elements() {
           boat.sail2.rotation += 1;
         }
       }
-      boat.position.x += 0.05;
+      if (is_wind == 1)
+        boat.position.x += 0.01;
+      else boat.position.x -= 0.01;
     }
-    if (is_wind == 2) {
-      if (boat.sail1.rotation > 180) {
-        if (boat.sail1.rotation != 180) {
-          boat.sail1.rotation -= 1;
-        }
-        if (boat.sail2.rotation != 180) {
-          boat.sail2.rotation -= 1;
-        }
-      }
-      else {
-        if (boat.sail1.rotation != 180) {
-            boat.sail1.rotation += 1;
-          }
-        if (boat.sail2.rotation != 180) {
-          boat.sail2.rotation += 1;
-        }
-      }
-      boat.position.x -= 0.05;
-    }
-    if (is_wind == 3) {
+
+    if (is_wind == 3 || is_wind == 4) {
       if (boat.sail1.rotation > 90) {
         if (boat.sail1.rotation != 90) {
           boat.sail1.rotation -= 1;
@@ -185,67 +160,42 @@ void tick_elements() {
           boat.sail2.rotation += 1;
         }
       }
-      boat.position.z -= 0.05;
-    }
-    if (is_wind == 4) {
-      if (boat.sail1.rotation > 270) {
-        if (boat.sail1.rotation != 270) {
-          boat.sail1.rotation -= 1;
-        }
-        if (boat.sail2.rotation != 270) {
-          boat.sail2.rotation -= 1;
-        }
-      }
-      else {
-        if (boat.sail1.rotation != 270) {
-            boat.sail1.rotation += 1;
-          }
-        if (boat.sail2.rotation != 270) {
-          boat.sail2.rotation += 1;
-        }
-      }
-      boat.position.z += 0.05;
+      if (is_wind == 3)
+        boat.position.z -= 0.01;
+      else boat.position.z += 0.01;
     }
 
-      // boat.sail1.rotation = 0;
-      // boat.sail2.rotation = 0;
-    // if (is_wind == 2) {
-    //   if (boat.sail1.rotation > 180) {}
-    //   boat.sail1.rotation = 180;
-    //   boat.sail2.rotation = 180;
-    // }
-    // if (is_wind == 3) {
-    //   boat.sail1.rotation = 90;
-    //   boat.sail2.rotation = 90;
-    // }
-    // if (is_wind == 4) {
-    //   boat.sail1.rotation = 270;
-    //   boat.sail2.rotation = 270;
-    // }
     camera_rotation_angle += 1;
-    if (view == 0) {                                                //follow_view
+    // view = 1;
+    if (view == 0) {
+      up = glm::vec3(0, 1, 0);                                              //follow_view
       target.x = boat.position.x;
       target.z = boat.position.z;
       eye.x = boat.position.x + 5*cos(boat.rotation * M_PI / 180.0f);
+      eye.y = 2;
       eye.z = boat.position.z - 5*sin(boat.rotation * M_PI / 180.0f);
     }
-    if (view == 1) {                                                //boat_view
-      eye = boat.position - glm::vec3(0.50, 0, 0);
+    if (view == 1) {
+      up = glm::vec3(0, 1, 0);                                              //follow_view
+      eye = boat.position - glm::vec3(0, -0.5, 0);
       target = boat.position - glm::vec3 (100, 0, 0);
       target.x = boat.position.x - 2*cos(boat.rotation * M_PI / 180.0f);
       target.z = boat.position.z + 2*sin(boat.rotation * M_PI / 180.0f);
       eye.x = boat.position.x - 0.5*cos(boat.rotation * M_PI / 180.0f);
+      // eye.y = -0.5;
       eye.z = boat.position.z + 0.5*sin(boat.rotation * M_PI / 180.0f);
-      eye.y += 0.5;
     }
     if (view == 2) {                                                //top_view
       eye = boat.position + glm::vec3(0, 20, 0);
       target = boat.position;
       up.x = -cos(boat.rotation * M_PI / 180.0f);
       up.z = sin(boat.rotation * M_PI / 180.0f);
+      // eye.y = 2;
     }
-    if (view == 3) {                                                //tower_view
+    if (view == 3) {
+      up = glm::vec3(0, 1, 0);                                              //follow_view
       eye = glm::vec3 (0, 10, 10);
+      // eye.y = 2;
       target.x = boat.position.x;
       target.z = boat.position.z;
     }

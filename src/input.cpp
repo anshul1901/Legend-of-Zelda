@@ -16,6 +16,7 @@
 bool   cannon_keyboard_input = true;
 bool   drag_pan = false, old_cki;
 double drag_oldx = -1, drag_oldy = -1;
+int view = 0;
 
 using namespace std;
 
@@ -25,19 +26,19 @@ void keyboard(GLFWwindow *window, int key, int scancode, int action, int mods) {
     // Function is called first on GLFW_PRESS.
 
     if (action == GLFW_RELEASE) {
-        // switch (key) {
-        // case GLFW_KEY_C:
-        // rectangle_rot_status = !rectangle_rot_status;
-        // break;
+        switch (key) {
+        case GLFW_KEY_C:
+          view = (view + 1) % 4;
+        break;
         // case GLFW_KEY_P:
         // triangle_rot_status = !triangle_rot_status;
         // break;
         // case GLFW_KEY_X:
-        //// do something ..
+        // // do something ..
         // break;
         // default:
-        // break;
-        // }
+        break;
+        }
     } else if (action == GLFW_PRESS) {
         switch (key) {
         case GLFW_KEY_ESCAPE:
