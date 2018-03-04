@@ -23,18 +23,10 @@ Boat::Boat(float x, float y, float z) {
     this->object = create3DObject(GL_TRIANGLES, 0, vertex_buffer_data, COLOR_RED, GL_FILL);
 }
 
-void Boat::draw(glm::mat4 VP, int is_wind) {
+void Boat::draw(glm::mat4 VP) {
     this->base.draw(VP);
-    if (is_wind == 0) {
       this->sail1.draw(VP);
       this->sail2.draw(VP);
-    }
-    else if (is_wind == 1) {
-      this->sail1.draw(VP);
-    }
-    else if (is_wind == 2) {
-      this->sail2.draw(VP);
-    }
     Matrices.model = glm::mat4(1.0f);
     glm::mat4 translate = glm::translate (this->position);    // glTranslatef
     glm::mat4 rotate    = glm::rotate((float) (this->rotation * M_PI / 180.0f), glm::vec3(0, 1, 0));
@@ -63,15 +55,18 @@ void Boat::tick() {
     this->sail1.position.x = this->position.x;
     this->sail1.position.y = this->position.y+2;
     this->sail1.position.z = this->position.z;
-    // this->sail1.rotation = this->rotation;
-    this->sail1.rotation += 1;
+    // this->sail1.rotation += 1;
+
     this->sail2.tick();
     this->sail2.position.x = this->position.x;
     this->sail2.position.y = this->position.y+2;
     this->sail2.position.z = this->position.z;
-    // this->sail2.rotation = this->rotation;
-    this->sail2.rotation += 1;
-    // this->rotation += speed;
-    // this->position.x -= speed;
-    // this->position.y -= speed;
+    // this->sail2.rotation += 1;
+}
+
+bounding_box_t Boat::bounding_box() {
+  float x = this->position.x, y = this->position.y, z = this->position.z;
+  float l = 0.7, w = 0.3, h = 5;
+  bounding_box_t bbox =  {x, y, z, 4*l, 4*w, 4*h};
+  return bbox;
 }

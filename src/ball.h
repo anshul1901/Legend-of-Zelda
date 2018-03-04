@@ -8,13 +8,13 @@ class Ball {
 public:
     Ball() {}
     Ball(float x, float y, float z, float length, float width, float height, color_t color);
-    // GLfloat vertex_buffer_data[];
     glm::vec3 position;
     float rotation;
     void draw(glm::mat4 VP);
     void set_position(float x, float y, float z);
     void tick();
     double speed;
+    bounding_box_t bounding_box();
 private:
     VAO *object;
 };

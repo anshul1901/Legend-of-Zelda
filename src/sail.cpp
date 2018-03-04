@@ -54,7 +54,7 @@ void Sail::set_position(float x, float y, float z) {
 }
 
 void Sail::tick() {
-    this->rotation += speed;
+    // this->rotation += speed;
     // this->position.x -= speed;
     // this->position.y -= speed;
 }

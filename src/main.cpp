@@ -2,6 +2,7 @@
 #include "timer.h"
 #include "ball.h"
 #include "boat.h"
+#include "math.h"
 
 using namespace std;
 
@@ -28,6 +29,7 @@ int view = 0;
 int is_wind = 0;
 double cursor_x, cursor_y;
 const int number_of_rocks = 100;
+time_t start = 0, total_time;
 
 Ball rocks[number_of_rocks];
 Ball water;
@@ -69,7 +71,7 @@ void draw() {
 
     // Scene render
     water.draw(VP);
-    boat.draw(VP, is_wind);
+    boat.draw(VP);
     for (int i = 0; i < number_of_rocks; i++) {
       rocks[i].draw(VP);
     }
@@ -86,6 +88,7 @@ void tick_input(GLFWwindow *window) {
     glfwGetCursorPos(window, &cursor_x, &cursor_y);
     int mouse_left = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
     if (c == GLFW_PRESS) {
+    // view = (view + 1) % 4;
       c_flag = 1;
     } else c_flag = 0;
     if (c == GLFW_RELEASE && c_flag) {
@@ -113,14 +116,108 @@ void tick_input(GLFWwindow *window) {
     }
 
 }
-
+int rock = 0;
 unsigned long long int j = 0;
+unsigned long long int time_count = 0;
 void tick_elements() {
     boat.tick();
     // water.tick();
-    // boat.sail1.rotation += 1;
-    // boat.sail2.rotation += 1;
+    if ((time_count++) % 500 == 0) {
+      is_wind = (int)random_number(0, 4);
+      // cout<<time_count<<" "<<is_wind<<endl;
+    }
+    if (is_wind == 0) {                                     // No wind
+      boat.sail1.rotation = boat.rotation;
+      boat.sail2.rotation = boat.rotation;
+    }
+    if (is_wind == 1) {
+      if (boat.sail1.rotation > 0) {
+        if (boat.sail1.rotation != 0) {
+          boat.sail1.rotation -= 1;
+        }
+        if (boat.sail2.rotation != 0) {
+          boat.sail2.rotation -= 1;
+        }
+      }
+      else {
+        if (boat.sail1.rotation != 0) {
+            boat.sail1.rotation += 1;
+          }
+        if (boat.sail2.rotation != 0) {
+          boat.sail2.rotation += 1;
+        }
+      }
+    }
+    if (is_wind == 2) {
+      if (boat.sail1.rotation > 180) {
+        if (boat.sail1.rotation != 180) {
+          boat.sail1.rotation -= 1;
+        }
+        if (boat.sail2.rotation != 180) {
+          boat.sail2.rotation -= 1;
+        }
+      }
+      else {
+        if (boat.sail1.rotation != 180) {
+            boat.sail1.rotation += 1;
+          }
+        if (boat.sail2.rotation != 180) {
+          boat.sail2.rotation += 1;
+        }
+      }
+    }
+    if (is_wind == 3) {
+      if (boat.sail1.rotation > 90) {
+        if (boat.sail1.rotation != 90) {
+          boat.sail1.rotation -= 1;
+        }
+        if (boat.sail2.rotation != 90) {
+          boat.sail2.rotation -= 1;
+        }
+      }
+      else {
+        if (boat.sail1.rotation != 90) {
+            boat.sail1.rotation += 1;
+          }
+        if (boat.sail2.rotation != 90) {
+          boat.sail2.rotation += 1;
+        }
+      }
+    }
+    if (is_wind == 4) {
+      if (boat.sail1.rotation > 270) {
+        if (boat.sail1.rotation != 270) {
+          boat.sail1.rotation -= 1;
+        }
+        if (boat.sail2.rotation != 270) {
+          boat.sail2.rotation -= 1;
+        }
+      }
+      else {
+        if (boat.sail1.rotation != 270) {
+            boat.sail1.rotation += 1;
+          }
+        if (boat.sail2.rotation != 270) {
+          boat.sail2.rotation += 1;
+        }
+      }
+    }
 
+      // boat.sail1.rotation = 0;
+      // boat.sail2.rotation = 0;
+    // if (is_wind == 2) {
+    //   if (boat.sail1.rotation > 180) {}
+    //   boat.sail1.rotation = 180;
+    //   boat.sail2.rotation = 180;
+    // }
+    // if (is_wind == 3) {
+    //   boat.sail1.rotation = 90;
+    //   boat.sail2.rotation = 90;
+    // }
+    // if (is_wind == 4) {
+    //   boat.sail1.rotation = 270;
+    //   boat.sail2.rotation = 270;
+    // }
     camera_rotation_angle += 1;
     if (view == 0) {                                                //follow_view
       target.x = boat.position.x;
@@ -138,7 +235,7 @@ void tick_elements() {
       eye.y += 0.5;
     }
     if (view == 2) {                                                //top_view
-      eye = boat.position + glm::vec3(0, 7, 0);
+      eye = boat.position + glm::vec3(0, 20, 0);
       target = boat.position;
       up.x = -cos(boat.rotation * M_PI / 180.0f);
       up.z = sin(boat.rotation * M_PI / 180.0f);
@@ -153,6 +250,18 @@ void tick_elements() {
     }
     else boat.position.y += 0.02*sin((++j)/7);
     // cout<<cursor_x<<" "<<cursor_y<<endl;
+    // cout<<boat.position.x<<" "<<boat.position.y<<" "<<boat.position.z<<endl;
+    for (int i = 0; i < number_of_rocks; i++) {
+      if (detect_collision(boat.bounding_box(), rocks[i].bounding_box())) {
+        boat.position.x += 2*cos(boat.rotation*M_PI / 180.0f);
+        boat.position.z -= 2*sin(boat.rotation*M_PI / 180.0f);
+        boat.health -= 1;
+      }
+    }
+    char s[100];
+    total_time = time(0) - start;
+    sprintf(s, "Health: %d | Time: %d", boat.health, (int)total_time);
+    glfwSetWindowTitle(window, s);
 
 }
 
@@ -163,7 +272,7 @@ void initGL(GLFWwindow *window, int width, int height) {
     // Create the models
 
     // boat       = Ball(1, -1.7, 0, 0.7, 0.2, 0.5, COLOR_RED);
-    boat       = Boat(1, -1.7, 0);
+    boat       = Boat(0, -1.7, 0);
     water       = Ball(0, -3, 0, 1000, 1, 1000, COLOR_BLUE);
     int count_rocks = 0;
     for (int i = 0; i < number_of_rocks; i++) {
@@ -203,6 +312,7 @@ int main(int argc, char **argv) {
     initGL (window, width, height);
 
     /* Draw in loop */
+    start = time(0);
     while (!glfwWindowShouldClose(window)) {
         // Process timers
 
@@ -225,8 +335,9 @@ int main(int argc, char **argv) {
 }
 
 bool detect_collision(bounding_box_t a, bounding_box_t b) {
-    return (abs(a.x - b.x) * 2 < (a.width + b.width)) &&
-           (abs(a.y - b.y) * 2 < (a.height + b.height));
+    return (abs(a.x - b.x) * 2 < (a.length + b.length)) &&
+           (abs(a.y - b.y) * 2 < (a.height + b.height)) &&
+           (abs(a.z - b.z) * 2 < (a.width + b.width));
 }
 
 void reset_screen() {

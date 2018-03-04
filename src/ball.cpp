@@ -1,10 +1,12 @@
 #include "ball.h"
 #include "main.h"
 
+float l, w, h;
 Ball::Ball(float x, float y, float z,  float length, float width, float height, color_t color) {
     this->position = glm::vec3(x, y, z);
     this->rotation = 0;
     speed = 1;
+    l = length, w = width, h = height;
     // Our vertices. Three consecutive floats give a 3D vertex; Three consecutive vertices give a triangle.
     // A cube has 6 faces with 2 triangles each, so this makes 6*2=12 triangles, and 12*3 vertices
      const GLfloat vertex_buffer_data[] = {
@@ -69,4 +71,10 @@ void Ball::tick() {
     // this->rotation += speed;
     // this->position.x -= speed;
     // this->position.y -= speed;
+}
+
+bounding_box_t Ball::bounding_box() {
+  float x = this->position.x, y = this->position.y, z = this->position.z;
+  bounding_box_t bbox = {x, y, z, 2*l, 2*w, 2*h};
+  return bbox;
 }
