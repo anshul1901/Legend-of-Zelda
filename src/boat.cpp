@@ -8,7 +8,9 @@ Boat::Boat(float x, float y, float z) {
     this->base = Ball(x, y, z, 0.7, 0.3, 0.5, COLOR_RED);
     this->sail1 = Sail(x, y+2, z, 3, 2, 0.125, COLOR_WHITE);
     this->sail2 = Sail(x, y+2, z, 3, -2, 0.125, COLOR_WHITE);
-
+    this->cannon = Ball(x-0.5, y+2, z, 1.5, 0.05, 0.05, COLOR_BLACK);
+    this->cannon.rotation_z = -45;
+    this->fireball = Ball(0, 0, 0, 0.2, 0.2, 0.2, COLOR_BROWN);
     this->position = glm::vec3(x, y, z);
     this->rotation = 0;
     speed = 1;
@@ -24,9 +26,11 @@ Boat::Boat(float x, float y, float z) {
 }
 
 void Boat::draw(glm::mat4 VP) {
-    this->base.draw(VP);
-      this->sail1.draw(VP);
-      this->sail2.draw(VP);
+    this->base.draw(VP, glm::vec3 (0, 1, 0));
+    this->sail1.draw(VP);
+    this->sail2.draw(VP);
+    this->cannon.draw(VP, glm::vec3 (0, 1, 0));
+    this->fireball.draw(VP, glm::vec3(0, 1, 0));
     Matrices.model = glm::mat4(1.0f);
     glm::mat4 translate = glm::translate (this->position);    // glTranslatef
     glm::mat4 rotate    = glm::rotate((float) (this->rotation * M_PI / 180.0f), glm::vec3(0, 1, 0));
@@ -43,6 +47,7 @@ void Boat::set_position(float x, float y, float z) {
     this->base.set_position(x, y, z);
     this->sail1.set_position(x, y+2, z);
     this->sail2.set_position(x, y+2, z);
+    this->cannon.set_position(x, y+2, z);
 }
 
 void Boat::tick() {
@@ -61,6 +66,15 @@ void Boat::tick() {
     this->sail2.position.x = this->position.x;
     this->sail2.position.y = this->position.y+2;
     this->sail2.position.z = this->position.z;
+
+    this->cannon.tick();
+    this->cannon.position.x = this->position.x;
+    this->cannon.position.y = this->position.y+1;
+    this->cannon.position.z = this->position.z;
+    this->cannon.rotation = this->rotation;
+
+    this->fireball.tick();
+    // this->fireball.position = this->position;
     // this->sail2.rotation += 1;
 }
 

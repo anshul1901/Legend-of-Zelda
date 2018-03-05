@@ -1,6 +1,7 @@
 #include "main.h"
 #include "ball.h"
 #include "sail.h"
+// #include "cannon.h"
 
 #ifndef BOAT_H
 #define BOAT_H
@@ -12,6 +13,8 @@ public:
     Boat(float x, float y, float z);
     Ball base;
     Sail sail1, sail2;
+    Ball cannon;
+    Ball fireball;
     int health;
     // Ball chhotu;
     glm::vec3 position;

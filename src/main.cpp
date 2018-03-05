@@ -3,6 +3,7 @@
 #include "ball.h"
 #include "boat.h"
 #include "math.h"
+#include "aim.h"
 
 using namespace std;
 
@@ -26,14 +27,18 @@ glm::vec3 eye (8, 2, 0);
 glm::vec3 target (0, 0, 0);
 glm::vec3 up (0, 1, 0);
 extern int view;
+extern int f;
 int is_wind = 0;
 double cursor_x, cursor_y;
 const int number_of_rocks = 100;
 time_t start = 0, total_time;
+int old_view = 0, temp_view = 0;
+int aim_flag = 0;
 
 Ball rocks[number_of_rocks];
 Ball water;
 Boat boat;
+Aim aim;
 
 
 Timer t60(1.0 / 60);
@@ -70,10 +75,13 @@ void draw() {
     glm::mat4 MVP;  // MVP = Projection * View * Model
 
     // Scene render
-    water.draw(VP);
+    water.draw(VP, glm::vec3 (0, 1, 0));
     boat.draw(VP);
     for (int i = 0; i < number_of_rocks; i++) {
-      rocks[i].draw(VP);
+      rocks[i].draw(VP, glm::vec3(0, 1, 0));
+    }
+    if (aim_flag == 1) {
+      aim.draw(VP);
     }
 }
 
@@ -83,7 +91,8 @@ void tick_input(GLFWwindow *window) {
     int left  = glfwGetKey(window, GLFW_KEY_LEFT);
     int right = glfwGetKey(window, GLFW_KEY_RIGHT);
     int space = glfwGetKey(window, GLFW_KEY_SPACE);
-    glfwGetCursorPos(window, &cursor_x, &cursor_y);
+    int z = glfwGetKey(window, GLFW_KEY_Z);
+
     int mouse_left = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
     if (left) {
       boat.rotation += 1;
@@ -105,59 +114,72 @@ void tick_input(GLFWwindow *window) {
     if (space && boat.position.y <= -1.68) {
       boat.position.y += 2;
     }
-
+    if (z && boat.fireball.position.x == boat.position.x) {
+      boat.fireball.shoot(boat.rotation, 1.5);
+    }
 }
 int rock = 0;
 unsigned long long int j = 0;
 unsigned long long int time_count = 0;
 void tick_elements() {
+    cout<<boat.fireball.position.x<<" "<<boat.fireball.position.y<<" "<<boat.fireball.position.z<<endl;
     boat.tick();
     // water.tick();
-    if ((time_count++) % 500 == 0) {
+    // fireball.rotation += 100;
+    if (boat.fireball.position.y > -3.2 && boat.fireball.speed.y != 0) {
+      boat.fireball.speed.y -= 0.1;
+    } else {
+      boat.fireball.position = boat.position;
+      boat.fireball.speed = glm::vec3 (0, 0, 0);
+    }
+    if ((time_count++) % 1000 == 0) {
       is_wind = (int)random_number(0, 4);
-      // cout<<time_count<<" "<<is_wind<<endl;
     }
+    is_wind = 0;
     if (is_wind == 0) {                                     // No wind
-      boat.sail1.rotation = boat.rotation;
-      boat.sail2.rotation = boat.rotation;
-    }
-    if (is_wind == 1 || is_wind == 2) {
-      if (boat.sail1.rotation > 0) {
-        if (boat.sail1.rotation != 0) {
+      float angle = boat.rotation + 75;
+      if (boat.sail1.rotation > angle) {
+        if (boat.sail1.rotation != angle) {
           boat.sail1.rotation -= 1;
-        }
-        if (boat.sail2.rotation != 0) {
           boat.sail2.rotation -= 1;
         }
       }
       else {
-        if (boat.sail1.rotation != 0) {
+        if (boat.sail1.rotation != angle) {
             boat.sail1.rotation += 1;
+            boat.sail2.rotation += 1;
           }
-        if (boat.sail2.rotation != 0) {
-          boat.sail2.rotation += 1;
+      }
+    }
+    else if (is_wind == 1 || is_wind == 2) {
+      if (boat.sail1.rotation > 105) {
+        if (boat.sail1.rotation != 105) {
+          boat.sail1.rotation -= 1;
+          boat.sail2.rotation -= 1;
         }
+      }
+      else {
+        if (boat.sail1.rotation != 105) {
+            boat.sail1.rotation += 1;
+            boat.sail2.rotation += 1;
+          }
       }
       if (is_wind == 1)
         boat.position.x += 0.01;
       else boat.position.x -= 0.01;
     }
 
-    if (is_wind == 3 || is_wind == 4) {
-      if (boat.sail1.rotation > 90) {
-        if (boat.sail1.rotation != 90) {
+    else if (is_wind == 3 || is_wind == 4) {
+      if (boat.sail1.rotation > 15) {
+        if (boat.sail1.rotation != 15) {
           boat.sail1.rotation -= 1;
-        }
-        if (boat.sail2.rotation != 90) {
           boat.sail2.rotation -= 1;
         }
       }
       else {
-        if (boat.sail1.rotation != 90) {
+        if (boat.sail1.rotation != 15) {
             boat.sail1.rotation += 1;
-          }
-        if (boat.sail2.rotation != 90) {
-          boat.sail2.rotation += 1;
+            boat.sail2.rotation += 1;
         }
       }
       if (is_wind == 3)
@@ -171,40 +193,52 @@ void tick_elements() {
       up = glm::vec3(0, 1, 0);                                              //follow_view
       target.x = boat.position.x;
       target.z = boat.position.z;
-      eye.x = boat.position.x + 5*cos(boat.rotation * M_PI / 180.0f);
+      eye.x = boat.position.x + 10*cos(boat.rotation * M_PI / 180.0f) ;
       eye.y = 2;
-      eye.z = boat.position.z - 5*sin(boat.rotation * M_PI / 180.0f);
+      eye.z = boat.position.z - 10*sin(boat.rotation * M_PI / 180.0f);
     }
-    if (view == 1) {
-      up = glm::vec3(0, 1, 0);                                              //follow_view
+    else if (view == 1) {
+      up = glm::vec3(0, 1, 0);                                              //boat_view
       eye = boat.position - glm::vec3(0, -0.5, 0);
-      target = boat.position - glm::vec3 (100, 0, 0);
-      target.x = boat.position.x - 2*cos(boat.rotation * M_PI / 180.0f);
-      target.z = boat.position.z + 2*sin(boat.rotation * M_PI / 180.0f);
+      target = boat.position - glm::vec3 (0, -0.5, 0);
+      target.x = boat.position.x - 10*cos(boat.rotation * M_PI / 180.0f);
+      target.z = boat.position.z + 10*sin(boat.rotation * M_PI / 180.0f);
       eye.x = boat.position.x - 0.5*cos(boat.rotation * M_PI / 180.0f);
-      // eye.y = -0.5;
       eye.z = boat.position.z + 0.5*sin(boat.rotation * M_PI / 180.0f);
     }
-    if (view == 2) {                                                //top_view
+    else if (view == 2) {                                                //top_view
       eye = boat.position + glm::vec3(0, 20, 0);
       target = boat.position;
       up.x = -cos(boat.rotation * M_PI / 180.0f);
       up.z = sin(boat.rotation * M_PI / 180.0f);
-      // eye.y = 2;
     }
-    if (view == 3) {
-      up = glm::vec3(0, 1, 0);                                              //follow_view
+    else if (view == 3) {
+      up = glm::vec3(0, 1, 0);                                              //tower_view
       eye = glm::vec3 (0, 10, 10);
-      // eye.y = 2;
       target.x = boat.position.x;
       target.z = boat.position.z;
     }
+
+    glfwGetCursorPos(window, &cursor_x, &cursor_y);
+
+    if (!glfwGetKey(window, GLFW_KEY_F)) {
+      old_view = view;
+      aim_flag = 0;
+      // cout<<"no f\n";
+    } else {
+      cursor_x -= 960;
+      cursor_y -= 504;
+      // cout<<cursor_x<<" "<<cursor_y<<endl;
+      target.y -= cursor_y/100;
+      target.z -= cursor_x/100;
+      aim_flag = 0;
+      aim.set_position(target.x - eye.x - 0.5, target.y - eye.y + 0.1, target.z - eye.z + 0.1);
+    }
+
     if (boat.position.y > -1.68) {
       boat.position.y -= 0.1;
     }
     else boat.position.y += 0.02*sin((++j)/7);
-    // cout<<cursor_x<<" "<<cursor_y<<endl;
-    // cout<<boat.position.x<<" "<<boat.position.y<<" "<<boat.position.z<<endl;
     for (int i = 0; i < number_of_rocks; i++) {
       if (detect_collision(boat.bounding_box(), rocks[i].bounding_box())) {
         boat.position.x += 2*cos(boat.rotation*M_PI / 180.0f);
@@ -234,6 +268,7 @@ void initGL(GLFWwindow *window, int width, int height) {
         float z = random_number(-500, 500);
         rocks[count_rocks++] = Ball(x, -1.7, z, 0.5, 0.5, 0.5, COLOR_BLACK);
     }
+    aim = Aim(target.x - eye.x + 0.1, target.y - eye.y + 0.1, target.z - eye.z + 0.1);
     // Create and compile our GLSL program from the shaders
     programID = LoadShaders("Sample_GL.vert", "Sample_GL.frag");
     // Get a handle for our "MVP" uniform
@@ -299,6 +334,7 @@ void reset_screen() {
     float far = 500;
     float angle = M_PI/2;
     float aspect_ratio = float(16/9);
+    // float aspect_ratio = 1.0f;
     // Matrices.projection = glm::ortho(left, right, bottom, top, 0.1f, 500.0f);
     Matrices.projection = glm::perspective(angle, aspect_ratio, near, far);
 }

@@ -5,7 +5,8 @@ float l, w, h;
 Ball::Ball(float x, float y, float z,  float length, float width, float height, color_t color) {
     this->position = glm::vec3(x, y, z);
     this->rotation = 0;
-    speed = 1;
+    this->rotation_z = 0;
+    // speed = 1;
     l = length, w = width, h = height;
     // Our vertices. Three consecutive floats give a 3D vertex; Three consecutive vertices give a triangle.
     // A cube has 6 faces with 2 triangles each, so this makes 6*2=12 triangles, and 12*3 vertices
@@ -51,13 +52,15 @@ Ball::Ball(float x, float y, float z,  float length, float width, float height, 
     this->object = create3DObject(GL_TRIANGLES, 12*3, vertex_buffer_data, color, GL_FILL);
 }
 
-void Ball::draw(glm::mat4 VP) {
+void Ball::draw(glm::mat4 VP, glm::vec3 axis) {
     Matrices.model = glm::mat4(1.0f);
     glm::mat4 translate = glm::translate (this->position);    // glTranslatef
-    glm::mat4 rotate    = glm::rotate((float) (this->rotation * M_PI / 180.0f), glm::vec3(0, 1, 0));
+    glm::mat4 rotate    = glm::rotate((float) (this->rotation * M_PI / 180.0f), axis);
+    glm::mat4 rotate_z   = glm::rotate((float) (this->rotation_z * M_PI / 180.0f), glm::vec3 (0, 0, 1));
     // No need as coords centered at 0, 0, 0 of cube arouund which we waant to rotate
     // rotate          = rotate * glm::translate(glm::vec3(0, -0.6, 0));
-    Matrices.model *= (translate * rotate);
+    Matrices.model *= (translate * rotate * rotate_z);
+    // Matrices.model *= (translate * rotate_z * (-translate));
     glm::mat4 MVP = VP * Matrices.model;
     glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
     draw3DObject(this->object);
@@ -67,10 +70,18 @@ void Ball::set_position(float x, float y, float z) {
     this->position = glm::vec3(x, y, z);
 }
 
+void Ball::shoot(float theta, float power) {
+    this->speed.x = -power*cos(theta * M_PI / 180.0f);
+    this->speed.z =  power*sin(theta * M_PI / 180.0f);
+    this->speed.y =  power;
+}
+
 void Ball::tick() {
     // this->rotation += speed;
-    // this->position.x -= speed;
-    // this->position.y -= speed;
+    // if (this->position.y > -1.68)
+      this->position.y += this->speed.y;
+      this->position.x += this->speed.x;
+      this->position.z += this->speed.z;
 }
 
 bounding_box_t Ball::bounding_box() {
