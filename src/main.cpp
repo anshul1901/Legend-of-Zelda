@@ -4,6 +4,7 @@
 #include "boat.h"
 #include "math.h"
 #include "aim.h"
+#include "monster.h"
 
 using namespace std;
 
@@ -30,7 +31,8 @@ extern int view;
 extern int f;
 int is_wind = 0;
 double cursor_x, cursor_y;
-const int number_of_rocks = 100;
+const int number_of_rocks = 100, number_of_monsters = 4;
+int monster_count = 0;
 time_t start = 0, total_time;
 int old_view = 0, temp_view = 0;
 int aim_flag = 0;
@@ -39,7 +41,7 @@ Ball rocks[number_of_rocks];
 Ball water;
 Boat boat;
 Aim aim;
-
+Monster monsters[number_of_monsters];
 
 Timer t60(1.0 / 60);
 
@@ -83,6 +85,13 @@ void draw() {
     if (aim_flag == 1) {
       aim.draw(VP);
     }
+    for (int i = 0; i < number_of_monsters - 1 && monsters[i].health != 0; i++) {
+      monsters[i].draw(VP, glm::vec3 (0, 1, 0));
+    }
+    if (monster_count == 2) {
+      monsters[number_of_monsters - 1].draw(VP, glm::vec3 (0, 1, 0));
+    }
+
 }
 
 void tick_input(GLFWwindow *window) {
@@ -122,12 +131,15 @@ int rock = 0;
 unsigned long long int j = 0;
 unsigned long long int time_count = 0;
 void tick_elements() {
-    cout<<boat.fireball.position.x<<" "<<boat.fireball.position.y<<" "<<boat.fireball.position.z<<endl;
     boat.tick();
     // water.tick();
     // fireball.rotation += 100;
+    for (int i = 0 ; i < number_of_monsters; i++) {
+      monsters[i].tick();
+    }
     if (boat.fireball.position.y > -3.2 && boat.fireball.speed.y != 0) {
       boat.fireball.speed.y -= 0.1;
+      // cout<<boat.fireball.position.x<<" "<<boat.fireball.position.y<<" "<<boat.fireball.position.z<<endl;
     } else {
       boat.fireball.position = boat.position;
       boat.fireball.speed = glm::vec3 (0, 0, 0);
@@ -135,7 +147,7 @@ void tick_elements() {
     if ((time_count++) % 1000 == 0) {
       is_wind = (int)random_number(0, 4);
     }
-    is_wind = 0;
+    // is_wind = 0;
     if (is_wind == 0) {                                     // No wind
       float angle = boat.rotation + 75;
       if (boat.sail1.rotation > angle) {
@@ -164,9 +176,9 @@ void tick_elements() {
             boat.sail2.rotation += 1;
           }
       }
-      if (is_wind == 1)
-        boat.position.x += 0.01;
-      else boat.position.x -= 0.01;
+      // if (is_wind == 1)
+      //   boat.position.x += 0.01;
+      // else boat.position.x -= 0.01;
     }
 
     else if (is_wind == 3 || is_wind == 4) {
@@ -182,9 +194,9 @@ void tick_elements() {
             boat.sail2.rotation += 1;
         }
       }
-      if (is_wind == 3)
-        boat.position.z -= 0.01;
-      else boat.position.z += 0.01;
+      // if (is_wind == 3)
+      //   boat.position.z -= 0.01;
+      // else boat.position.z += 0.01;
     }
 
     camera_rotation_angle += 1;
@@ -246,6 +258,43 @@ void tick_elements() {
         boat.health -= 1;
       }
     }
+
+    for (int i = 0; i < number_of_monsters; i++) {
+      if(detect_collision(boat.fireball.bounding_box(), monsters[i].bounding_box())) {
+        monsters[i].health -= 20;
+        cout<<"YES\n";
+        cout<<monsters[i].health<<endl;
+        if (monsters[i].health == 0) {
+          monster_count += 1;
+          monsters[i].position.x = 1000;
+        }
+      }
+    }
+
+    for (int i = 0; i < number_of_monsters - 1 && monsters[i].health != 0; i++) {
+      float x_dist = -monsters[i].position.x + boat.position.x;
+      float z_dist = -monsters[i].position.z + boat.position.z;
+      float temp_dist = sqrt(x_dist*x_dist + z_dist*z_dist);
+      for (int j = 0; j < monsters[i].number_of_fireballs; j++) {
+        if (monsters[i].fireballs[j].position.x == monsters[i].position.x)
+          monsters[i].fireballs[j].shoot((180.0f - atan2(z_dist,x_dist)*180.0f/M_PI), temp_dist/30);
+        // cout<<atan2(x_dist,z_dist)<<endl;
+        if (monsters[i].fireballs[j].position.y > -3.2 && monsters[i].fireballs[j].speed.y != 0) {
+          monsters[i].fireballs[j].speed.y -= 0.1;
+          // cout<<boat.fireball.position.x<<" "<<boat.fireball.position.y<<" "<<boat.fireball.position.z<<endl;
+        } else {
+          monsters[i].fireballs[j].position = monsters[i].position;
+          monsters[i].fireballs[j].speed = glm::vec3 (0, 0, 0);
+        }
+        if (detect_collision(monsters[i].fireballs[j].bounding_box(), boat.bounding_box())) {
+          boat.health -= 1;
+        }
+      }
+    }
+
+
+
+
     char s[100];
     total_time = time(0) - start;
     sprintf(s, "Health: %d | Time: %d", boat.health, (int)total_time);
@@ -269,6 +318,23 @@ void initGL(GLFWwindow *window, int width, int height) {
         rocks[count_rocks++] = Ball(x, -1.7, z, 0.5, 0.5, 0.5, COLOR_BLACK);
     }
     aim = Aim(target.x - eye.x + 0.1, target.y - eye.y + 0.1, target.z - eye.z + 0.1);
+
+    for (int i = 0; i < number_of_monsters - 1; i++) {
+      float x = random_number(-50, 50);
+      // float y = random_number(-50, 50);
+      float z = random_number(-50, 50);
+      if (i % 2 == 0){
+        monsters[i] = Monster(x, -1.7, z, 0.5, 0, COLOR_RED);
+        monsters[i].health = 100;
+      } else {
+        monsters[i] = Monster(x, -1.7, z, 0.7, 1, COLOR_BLACK);
+        monsters[i].health = 200;
+      }
+    }
+    monsters[number_of_monsters - 1] = Monster(2, 2, 2, 1, 2, COLOR_GREEN);
+    monsters[number_of_monsters - 1].health = 300;
+
+
     // Create and compile our GLSL program from the shaders
     programID = LoadShaders("Sample_GL.vert", "Sample_GL.frag");
     // Get a handle for our "MVP" uniform
