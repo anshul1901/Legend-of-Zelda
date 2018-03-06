@@ -8,7 +8,7 @@
 class Monster {
 public:
     Monster() {}
-    Monster(float x, float y, float z, float scale, int type, color_t color);
+    Monster(float x, float y, float z, float scale, int type);
     Ball center, right, left, top;
     int number_of_fireballs;
     int number_of_gifts;

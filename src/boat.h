@@ -19,10 +19,10 @@ public:
     // Ball chhotu;
     glm::vec3 position;
     float rotation;
-    void draw(glm::mat4 VP);
+    void draw(glm::mat4 VP, int is_sail);
     void set_position(float x, float y, float z);
     void tick();
-    double speed;
+    glm::vec3 speed;
     bounding_box_t bounding_box();
 private:
     VAO *object;

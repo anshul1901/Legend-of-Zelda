@@ -13,14 +13,18 @@ Boat::Boat(float x, float y, float z) {
     this->fireball = Ball(0, 0, 0, 0.2, 0.2, 0.2, COLOR_BROWN);
     this->position = glm::vec3(x, y, z);
     this->rotation = 0;
-    speed = 1;
+    this->speed.x = 0;
+    this->speed.y = 0;
+    this->speed.z = 0;
     this->health = 100;
 }
 
-void Boat::draw(glm::mat4 VP) {
+void Boat::draw(glm::mat4 VP, int is_sail) {
     this->base.draw(VP, glm::vec3 (0, 1, 0));
-    this->sail1.draw(VP);
-    this->sail2.draw(VP);
+    if (is_sail) {
+      this->sail1.draw(VP);
+      this->sail2.draw(VP);
+    }
     this->cannon.draw(VP, glm::vec3 (0, 1, 0));
     this->fireball.draw(VP, glm::vec3(1, 1, 1));
 }
@@ -35,6 +39,10 @@ void Boat::set_position(float x, float y, float z) {
 
 void Boat::tick() {
 
+    this->position.x -= this->speed.x;
+    this->position.y += this->speed.y;
+    this->position.z += this->speed.z;
+    
     this->base.tick();
     this->base.position = this->position;
     this->base.rotation = this->rotation;

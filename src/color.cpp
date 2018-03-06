@@ -7,4 +7,6 @@ const color_t COLOR_BLACK = { 0, 0, 0 };
 const color_t COLOR_BLUE = { 0, 135, 220 };
 const color_t COLOR_BACKGROUND = { 185, 245, 246 };
 const color_t COLOR_BROWN = {108, 49, 38};
+const color_t COLOR_YELLOW = {204, 204, 0};
+const color_t COLOR_PURPLE = {255, 0, 255};
 // const color_t COLOR_BACKGROUND = { 242, 241, 239 };

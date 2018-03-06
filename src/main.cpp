@@ -5,6 +5,7 @@
 #include "math.h"
 #include "aim.h"
 #include "monster.h"
+#include "barrel.h"
 
 using namespace std;
 
@@ -32,12 +33,14 @@ extern int f;
 int is_wind = 0;
 double cursor_x, cursor_y;
 double old_x, old_y;
-const int number_of_rocks = 100, number_of_monsters = 4;
+const int number_of_rocks = 100, number_of_monsters = 4, number_of_barrels = 100;
 int monster_count = 0;
 time_t start = 0, total_time;
 int old_view = 0, temp_view = 0;
 int aim_flag = 0;
 int boss_flag = 0;
+int is_sail = 0;
+int score = 0;
 
 Ball rocks[number_of_rocks];
 Ball water;
@@ -45,6 +48,7 @@ Boat boat;
 Aim aim;
 Monster monsters[number_of_monsters];
 Monster boss;
+Barrel barrels[number_of_barrels];
 
 Timer t60(1.0 / 60);
 
@@ -81,7 +85,7 @@ void draw() {
 
     // Scene render
     water.draw(VP, glm::vec3 (0, 1, 0));
-    boat.draw(VP);
+    boat.draw(VP, is_sail);
     for (int i = 0; i < number_of_rocks; i++) {
       rocks[i].draw(VP, glm::vec3(0, 1, 0));
     }
@@ -91,10 +95,13 @@ void draw() {
     for (int i = 0; i < number_of_monsters; i++) {
       monsters[i].draw(VP, glm::vec3 (0, 1, 0));
     }
-    if (monster_count % 2 == 0 && boss_flag) {
+    if (monster_count % 2 == 0 && !boss_flag) {
       boss.draw(VP, glm::vec3 (0, 1, 0));
+      // cout<<"BOSS\n";
     }
-
+    for (int i = 0; i < number_of_barrels; i++) {
+      barrels[i].draw(VP, glm::vec3 (0, 1, 0));
+    }
 }
 
 void tick_input(GLFWwindow *window) {
@@ -106,25 +113,28 @@ void tick_input(GLFWwindow *window) {
     int z = glfwGetKey(window, GLFW_KEY_Z);
 
     if (left) {
-      boat.rotation += 1;
+      if (down) boat.rotation -= 1;
+      else boat.rotation += 1;
     }
     if (right) {
-      boat.rotation -= 1;
+      if (down) boat.rotation += 1;
+      else boat.rotation -= 1;
     }
     if (up) {
-      boat.position.x -= 0.1*cos(boat.rotation * M_PI / 180.0f);
-      boat.position.z += 0.1*sin(boat.rotation * M_PI / 180.0f);
+      boat.position.x -= 0.4*cos(boat.rotation * M_PI / 180.0f);
+      boat.position.z += 0.4*sin(boat.rotation * M_PI / 180.0f);
     }
     if (down) {
-      boat.position.x += 0.1*cos(boat.rotation * M_PI / 180.0f);
-      boat.position.z -= 0.1*sin(boat.rotation * M_PI / 180.0f);
+      boat.position.x += 0.4*cos(boat.rotation * M_PI / 180.0f);
+      boat.position.z -= 0.4*sin(boat.rotation * M_PI / 180.0f);
     }
     if (space && boat.position.y <= -1.68) {
-      boat.position.y += 2;
+      boat.speed.y += 1.2;
     }
-    if (z && boat.fireball.position.x - boat.position.x < 0.01 && boat.fireball.position.z - boat.position.z < 0.01) {
-      // is_wind = 0;
-      boat.fireball.shoot(boat.rotation, 1.5);
+    if (z) {
+      is_wind = 0;
+      if(boat.fireball.position.x == boat.position.x)
+        boat.fireball.shoot(boat.rotation, 1.5);
     }
 }
 int rock = 0;
@@ -132,13 +142,17 @@ unsigned long long int j = 0;
 unsigned long long int time_count = 0;
 void tick_elements() {
     boat.tick();
+    for (int i = 0; i < number_of_barrels; i++) {
+      barrels[i].tick();
+    }
     // water.tick();
+    // cout<<monster_count<<endl;
     boat.fireball.rotation += 100;
     for (int i = 0 ; i < number_of_monsters; i++) {
       monsters[i].tick();
     }
     if (boat.fireball.position.y > -3.2 && boat.fireball.speed.y != 0) {
-      boat.fireball.speed.y -= 0.1;
+      boat.fireball.speed.y -= 0.06;
     } else {
       boat.fireball.position = boat.position;
       boat.fireball.speed = glm::vec3 (0, 0, 0);
@@ -196,7 +210,7 @@ void tick_elements() {
         boat.position.z -= 0.01;
       else boat.position.z += 0.01;
     }
-
+    is_sail = 1;
     if (view == 0) {
       up = glm::vec3(0, 1, 0);                                              //follow_view
       target.x = boat.position.x;
@@ -206,6 +220,7 @@ void tick_elements() {
       eye.z = boat.position.z - 10*sin(boat.rotation * M_PI / 180.0f);
     }
     else if (view == 1) {
+      is_sail = 0;
       up = glm::vec3(0, 1, 0);                                              //boat_view
       eye = boat.position - glm::vec3(0, -0.5, 0);
       target = boat.position - glm::vec3 (0, -0.5, 0);
@@ -236,26 +251,41 @@ void tick_elements() {
       aim_flag = 0;
       // cout<<"no f\n";
     } else {
-      aim_flag = 1;
+      is_wind = 0;
+      aim_flag = 0;
       cursor_x -= 960;
       cursor_y -= 504;
-      target.y -= cursor_y/100;
+      // cursor_x -= cursor_x;
+      // cursor_y -= cursor_y;
+      target.y += cursor_y/100;
       target.z -= cursor_x/100;
-      aim.set_position(target.x - eye.x - 0.001, target.y - eye.y + 0.001, target.z - eye.z + 0.001);
+      // cout<<cursor_x<<" "<<cursor_y<<endl;
+      // aim.set_position(target.x - boat.position.x - 0.001, target.y - boat.position.y + 0.001, target.z - boat.position.z + 0.001);
       float x_dist = target.x - eye.x;
       float z_dist = target.z - eye.z;
       float theta = 180.0f - atan2(z_dist,x_dist)*180.0f/M_PI;
       int mouse_left = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
       if (mouse_left && boat.position.x == boat.fireball.position.x) {
         boat.fireball.set_position(eye.x, eye.y, eye.z);
-        boat.fireball.shoot(theta, 1);
+        // cursor_y = -cursor_y;
+        cursor_y += 504;
+        boat.fireball.shoot(theta, abs(cursor_y)/500);
       }
     }
 
     if (boat.position.y > -1.68) {
-      boat.position.y -= 0.1;
+      boat.speed.y -= 0.1;
     }
-    else boat.position.y += 0.02*sin((++j)/7);
+    else {
+      boat.position.y += 0.02*sin((++j)/7);
+      boat.speed.y = 0;
+    }
+    if (boat.speed.x > 0) {
+      boat.speed.x -= 0.05;
+    }
+    if (boat.speed.y > 0) {
+      boat.speed.y -= 0.05;
+    }
     for (int i = 0; i < number_of_rocks; i++) {
       if (detect_collision(boat.bounding_box(), rocks[i].bounding_box())) {
         boat.position.x += 2*cos(boat.rotation*M_PI / 180.0f);
@@ -267,26 +297,23 @@ void tick_elements() {
     for (int i = 0; i < number_of_monsters; i++) {
       if(detect_collision(boat.fireball.bounding_box(), monsters[i].bounding_box())) {
         monsters[i].health -= 20;
-        cout<<"YES\n";
+        // cout<<"YES\n";
         if (monsters[i].health == 0) {
           for (int j = 0; j < monsters[i].number_of_gifts; j++) {
             float temp = random_number(0, 360);
             monsters[i].gifts[j].shoot(temp, 0.7);
-            // if (monsters[i].gifts[j].position.y > -3.2 && monsters[i].gifts[j].speed.y != 0) {
-            //   monsters[i].gifts[j].speed.y -= 0.1;
-            //   // cout<<"neeche\n";
-            // } else {
-            //   monsters[i].gifts[j].speed = glm::vec3 (0, 0, 0);
-            //   cout<<"main se\n";
-            //   monsters[i].gifts[j].position.y = -2.0;
-            // }
-            monsters[i].set_position(random_number(-50, 50), -1.7, random_number(-50, 50));
-            monsters[i].health = 100;
-            monster_count += 1;
+            cout<<monsters[i].gifts[j].position.x<<" "<<monsters[i].gifts[j].position.z<<endl;
+            if(detect_collision(boat.bounding_box(), monsters[i].gifts[j].bounding_box())) {
+              score += 3;
+              boat.health += 2;
+              monsters[i].gifts[j].speed.y += 1;
+            }
           }
+          monster_count += 1;
         }
       }
-      if (monster_count % 2 == 0 && !boss_flag) {
+      if (monster_count % 2 == 0 && !boss_flag && monster_count != 0) {
+        cout<<"BOSS\n";
         boss.set_position(random_number(boat.position.x -10, boat.position.x +10), -1.7, random_number(boat.position.z-10, boat.position.z+10));
         boss_flag = 1;
       }
@@ -298,8 +325,8 @@ void tick_elements() {
         boss.set_position(0, -20, 0);
         boss_flag = 0;
       }
-      // cout<<"YYEESS\n";
     }
+
 
     for (int i = 0; i < number_of_monsters && monsters[i].health != 0; i++) {
       if (j % 9 == 0) {
@@ -309,8 +336,6 @@ void tick_elements() {
         for (int k = 0; k < monsters[i].number_of_fireballs; k++) {
           if (monsters[i].fireballs[k].position.x == monsters[i].position.x)
             monsters[i].fireballs[k].shoot((180.0f - atan2(z_dist,x_dist)*180.0f/M_PI), temp_dist/30);
-          // cout<<atan2(x_dist,z_dist)<<endl;
-          // cout<<temp_dist/30<<endl;;
           if (monsters[i].fireballs[k].position.y > -3.2 && monsters[i].fireballs[k].speed.y != 0) {
             monsters[i].fireballs[k].speed.y -= 0.1;
             // cout<<boat.fireball.position.x<<" "<<boat.fireball.position.y<<" "<<boat.fireball.position.z<<endl;
@@ -324,13 +349,18 @@ void tick_elements() {
         }
       }
     }
-
-
+    for (int i = 0; i < number_of_barrels; i++) {
+      if (detect_collision(boat.bounding_box(), barrels[i].bounding_box())) {
+        score += 2;
+        barrels[i].set_position(random_number(-1000, 1000), -1.7, random_number(-1000, 1000));
+        // cout<<"barrel\n";
+      }
+    }
 
 
     char s[100];
     total_time = time(0) - start;
-    sprintf(s, "Health: %d | Time: %d", boat.health, (int)total_time);
+    sprintf(s, "Health: %d | Score: %d | Time: %d", boat.health, score, (int)total_time);
     glfwSetWindowTitle(window, s);
 
 }
@@ -350,21 +380,26 @@ void initGL(GLFWwindow *window, int width, int height) {
         float z = random_number(-500, 500);
         rocks[count_rocks++] = Ball(x, -1.7, z, 0.5, 0.5, 0.5, COLOR_BLACK);
     }
-    aim = Aim(target.x - eye.x + 0.1, target.y - eye.y + 0.1, target.z - eye.z + 0.1);
+    aim = Aim(0, 0, 0);
+
+    for (int i = 0; i < number_of_barrels; i++) {
+      barrels[i] = Barrel(random_number(-1000, 1000), -1.7, random_number(-1000, 1000));
+    }
 
     for (int i = 0; i < number_of_monsters; i++) {
       float x = random_number(-50, 50);
       // float y = random_number(-50, 50);
       float z = random_number(-50, 50);
       if (i % 2 == 0){
-        monsters[i] = Monster(x, -1.7, z, 0.5, 0, COLOR_RED);
+        monsters[i] = Monster(x, -0.2, z, 0.5, 0);
         monsters[i].health = 100;
       } else {
-        monsters[i] = Monster(x, -1.7, z, 0.7, 1, COLOR_BLACK);
+        monsters[i] = Monster(x, -0.2, z, 0.7, 1);
         monsters[i].health = 200;
       }
     }
-    boss = Monster(2, -20, 2, 1, 2, COLOR_GREEN);
+
+    boss = Monster(2, -20, 2, 1, 2);
     boss.health = 300;
 
 

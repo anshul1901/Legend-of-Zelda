@@ -3,38 +3,43 @@
 #include "main.h"
 #include "iostream"
 
-Monster::Monster(float x, float y, float z, float scale, int type, color_t color) {
+Monster::Monster(float x, float y, float z, float scale, int type) {
     float size_of_fireball = 0;
-    float size_of_gift = 0.5 ;
-
+    float size_of_gift = 0.3 ;
+    color_t color;
     this->position = glm::vec3(x, y, z);
     this->rotation = 0;
     this->health = 100;
     this->size = scale*3;
+    this->number_of_fireballs = 0;
+    this->number_of_gifts = 0;
+    if (type == 0) {
+      number_of_fireballs = 2, size_of_fireball = 0.2;
+      number_of_gifts = 8;
+      color = COLOR_RED;
+    } else if (type == 1) {
+      number_of_fireballs = 3, size_of_fireball = 0.3;
+      number_of_gifts = 8;
+      color = COLOR_GREEN;
+    } else {
+      number_of_fireballs = 4, size_of_fireball = 0.4;
+      number_of_gifts = 20;
+      color = COLOR_YELLOW;
+    }
 
-    this->center = Ball(x, y, z, size, size, size, color);
+    this->center = Ball(x, y, z, size, size, size, COLOR_BLACK);
     this->right = Ball(x, y, z - 1.5*size, size/2, size/2, size/2, color);
     this->left = Ball(x, y, z + 1.5*size, size/2, size/2, size/2, color);
     this->top = Ball(x, y + 1.5*size, z, size/2, size/2, size/2, color);
 
-    this->number_of_fireballs = 0;
-    this->number_of_gifts = 0;
 
-    if (type == 0) {
-      number_of_fireballs = 2, size_of_fireball = 0.2;
-      number_of_gifts = 8;
-    } else if (type == 1) {
-      number_of_fireballs = 3, size_of_fireball = 0.3;
-      number_of_gifts = 8;
-    } else {
-      number_of_fireballs = 4, size_of_fireball = 0.4;
-      number_of_gifts = 20;
-    }
+
+
     for (int i = 0; i < number_of_fireballs; i++) {
       this->fireballs[i] = Ball(x, y, z, size_of_fireball, size_of_fireball, size_of_fireball, COLOR_BLACK);
     }
     for (int i = 0; i < number_of_gifts; i++) {
-      this->gifts[i] = Ball(x, y, z, size_of_gift, size_of_gift, size_of_gift, COLOR_GREEN);
+      this->gifts[i] = Ball(x, y, z, size_of_gift, size_of_gift, size_of_gift, COLOR_PURPLE);
     }
 }
 
@@ -57,6 +62,13 @@ void Monster::set_position(float x, float y, float z) {
 }
 
 void Monster::tick() {
+    this->position.x += this->speed.x;
+    this->position.y += this->speed.y;
+    this->position.z += this->speed.z;
+    this->center.set_position(this->position.x, this->position.y, this->position.z);
+    this->left.set_position(this->position.x, this->position.y, this->position.z+1.5*size);
+    this->right.set_position(this->position.x, this->position.y, this->position.z - 1.5*size);
+    this->top.set_position(this->position.x, this->position.y+1.5*size, this->position.z);
     for (int i = 0; i < number_of_fireballs; i++) {
       this->fireballs[i].tick();
     }
@@ -66,8 +78,11 @@ void Monster::tick() {
         this->gifts[i].speed.y -= 0.1;
       } else {
         this->gifts[i].speed = glm::vec3 (0, 0, 0);
-        this->gifts[i].position.y = -1.7;
+        this->gifts[i].position.y = -1;
       }
+    }
+    if (this->health == 0) {
+      this->speed.y -= 0.2;
     }
 }
 
