@@ -82,10 +82,11 @@ void Ball::tick() {
       this->position.y += this->speed.y;
       this->position.x += this->speed.x;
       this->position.z += this->speed.z;
+      this->set_position(this->position.x, this->position.y, this->position.z);
 }
 
 bounding_box_t Ball::bounding_box() {
   float x = this->position.x, y = this->position.y, z = this->position.z;
-  bounding_box_t bbox = {x, y, z, 2*l, 2*w, 2*h};
+  bounding_box_t bbox = {x, y, z, 4*l, 4*w, 4*h};
   return bbox;
 }

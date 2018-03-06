@@ -10,7 +10,7 @@ Boat::Boat(float x, float y, float z) {
     this->sail2 = Sail(x, y+2, z, 3, -2, 0.125, COLOR_WHITE);
     this->cannon = Ball(x-0.5, y+2, z, 1.5, 0.05, 0.05, COLOR_BLACK);
     this->cannon.rotation_z = -45;
-    this->fireball = Ball(0, 0, 0, 0.2, 0.2, 0.2, COLOR_BROWN);
+    this->fireball = Ball(0, 0, 0, 0.25, 0.25, 0.25, COLOR_YELLOW);
     this->position = glm::vec3(x, y, z);
     this->rotation = 0;
     this->speed.x = 0;
@@ -42,7 +42,7 @@ void Boat::tick() {
     this->position.x -= this->speed.x;
     this->position.y += this->speed.y;
     this->position.z += this->speed.z;
-    
+
     this->base.tick();
     this->base.position = this->position;
     this->base.rotation = this->rotation;

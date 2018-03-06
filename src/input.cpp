@@ -29,7 +29,7 @@ void keyboard(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (action == GLFW_RELEASE) {
         switch (key) {
         case GLFW_KEY_C:
-          view = (view + 1) % 4;
+          view = (view + 1) % 5;
           break;
         case GLFW_KEY_F:
           view = old_view;
@@ -65,7 +65,8 @@ void keyboardChar(GLFWwindow *window, unsigned int key) {
         break;
     }
 }
-
+extern int mouse_left;
+extern glm::vec3 target, eye;
 /* Executed when a mouse button is pressed/released */
 void mouseButton(GLFWwindow *window, int button, int action, int mods) {
     switch (button) {
@@ -74,7 +75,7 @@ void mouseButton(GLFWwindow *window, int button, int action, int mods) {
             // Do something
             return;
         } else if (action == GLFW_RELEASE) {
-            // Do something
+
         }
         break;
     // case GLFW_MOUSE_BUTTON_RIGHT:

@@ -5,7 +5,7 @@ Barrel::Barrel(float x, float y, float z) {
     this->position = glm::vec3(x, y, z);
     this->rotation = 0;
     this->base = Ball (x, y, z, 0.5, 0.5, 0.5, COLOR_WHITE);
-    this->coin = Ball(x, y-0.4, z, 0.4, 0.4, 0.4, COLOR_GREEN);
+    this->coin = Ball(x, y-0.4, z, 0.4, 0.4, 0.4, COLOR_RED);
 }
 
 void Barrel::draw(glm::mat4 VP, glm::vec3 axis) {
