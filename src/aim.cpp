@@ -4,7 +4,7 @@
 Aim::Aim(float x, float y, float z) {
     this->rotation = 0;
     this->position = glm::vec3(x, y, z);
-    float l = 0.5, b = 0.05;
+    float l = 0.2, b = 0.03;
     // Our vertices. Three consecutive floats give a 3D vertex; Three consecutive vertices give a triangle.
     // A cube has 6 faces with 2 triangles each, so this makes 6*2=12 triangles, and 12*3 vertices
     const GLfloat vertex_buffer_data[] = {

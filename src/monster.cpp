@@ -1,9 +1,11 @@
 #include "ball.h"
 #include "monster.h"
 #include "main.h"
+#include "iostream"
 
 Monster::Monster(float x, float y, float z, float scale, int type, color_t color) {
     float size_of_fireball = 0;
+    float size_of_gift = 0.5 ;
 
     this->position = glm::vec3(x, y, z);
     this->rotation = 0;
@@ -16,25 +18,24 @@ Monster::Monster(float x, float y, float z, float scale, int type, color_t color
     this->top = Ball(x, y + 1.5*size, z, size/2, size/2, size/2, color);
 
     this->number_of_fireballs = 0;
+    this->number_of_gifts = 0;
 
     if (type == 0) {
       number_of_fireballs = 2, size_of_fireball = 0.2;
+      number_of_gifts = 8;
     } else if (type == 1) {
       number_of_fireballs = 3, size_of_fireball = 0.3;
+      number_of_gifts = 8;
     } else {
       number_of_fireballs = 4, size_of_fireball = 0.4;
+      number_of_gifts = 20;
     }
     for (int i = 0; i < number_of_fireballs; i++) {
       this->fireballs[i] = Ball(x, y, z, size_of_fireball, size_of_fireball, size_of_fireball, COLOR_BLACK);
     }
-
-    // speed = 1;
-    // Our vertices. Three consecutive floats give a 3D vertex; Three consecutive vertices give a triangle.
-    // A cube has 6 faces with 2 triangles each, so this makes 6*2=12 triangles, and 12*3 vertices
-     const GLfloat vertex_buffer_data[] = {
-    };
-    // this->vertex_buffer_data = vertex_buffer_data;
-    this->object = create3DObject(GL_TRIANGLES, 0, vertex_buffer_data, color, GL_FILL);
+    for (int i = 0; i < number_of_gifts; i++) {
+      this->gifts[i] = Ball(x, y, z, size_of_gift, size_of_gift, size_of_gift, COLOR_GREEN);
+    }
 }
 
 void Monster::draw(glm::mat4 VP, glm::vec3 axis) {
@@ -46,17 +47,9 @@ void Monster::draw(glm::mat4 VP, glm::vec3 axis) {
     for (int i = 0; i < number_of_fireballs; i++) {
       this->fireballs[i].draw(VP, glm::vec3 (1, 1, 1));
     }
-
-    Matrices.model = glm::mat4(1.0f);
-    glm::mat4 translate = glm::translate (this->position);    // glTranslatef
-    glm::mat4 rotate    = glm::rotate((float) (this->rotation * M_PI / 180.0f), axis);
-    // No need as coords centered at 0, 0, 0 of cube arouund which we waant to rotate
-    // rotate          = rotate * glm::translate(glm::vec3(0, -0.6, 0));
-    Matrices.model *= (translate * rotate);
-    // Matrices.model *= (translate * rotate_z * (-translate));
-    glm::mat4 MVP = VP * Matrices.model;
-    glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-    draw3DObject(this->object);
+    for (int i = 0; i < number_of_gifts; i++) {
+      this->gifts[i].draw(VP, glm::vec3 (1, 1, 1));
+    }
 }
 
 void Monster::set_position(float x, float y, float z) {
@@ -64,23 +57,23 @@ void Monster::set_position(float x, float y, float z) {
 }
 
 void Monster::tick() {
-    // this->rotation += speed;
-    // if (this->position.y > -1.68)
-      // this->position.y += this->speed.y;
-      // this->position.x += this->speed.x;
-      // this->position.z += this->speed.z;
     for (int i = 0; i < number_of_fireballs; i++) {
       this->fireballs[i].tick();
-      this->fireballs[i].rotation+=1;
     }
-      if (this->health == 0) {
-        this->position.y = -5;
+    for (int i = 0; i < number_of_gifts; i++) {
+      this->gifts[i].tick();
+      if (this->gifts[i].speed.y != 0 && this->gifts[i].position.y > -3.1) {
+        this->gifts[i].speed.y -= 0.1;
+      } else {
+        this->gifts[i].speed = glm::vec3 (0, 0, 0);
+        this->gifts[i].position.y = -1.7;
       }
+    }
 }
 
 bounding_box_t Monster::bounding_box() {
   float x = this->position.x, y = this->position.y, z = this->position.z;
   float a = this->size;
-  bounding_box_t bbox = {x, y, z, 2*a, 2*a, 2*a};
+  bounding_box_t bbox = {x, y, z, 4*a, 4*a, 4*a};
   return bbox;
 }

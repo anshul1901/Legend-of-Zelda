@@ -31,17 +31,20 @@ extern int view;
 extern int f;
 int is_wind = 0;
 double cursor_x, cursor_y;
+double old_x, old_y;
 const int number_of_rocks = 100, number_of_monsters = 4;
 int monster_count = 0;
 time_t start = 0, total_time;
 int old_view = 0, temp_view = 0;
 int aim_flag = 0;
+int boss_flag = 0;
 
 Ball rocks[number_of_rocks];
 Ball water;
 Boat boat;
 Aim aim;
 Monster monsters[number_of_monsters];
+Monster boss;
 
 Timer t60(1.0 / 60);
 
@@ -85,11 +88,11 @@ void draw() {
     if (aim_flag == 1) {
       aim.draw(VP);
     }
-    for (int i = 0; i < number_of_monsters - 1 && monsters[i].health != 0; i++) {
+    for (int i = 0; i < number_of_monsters; i++) {
       monsters[i].draw(VP, glm::vec3 (0, 1, 0));
     }
-    if (monster_count == 2) {
-      monsters[number_of_monsters - 1].draw(VP, glm::vec3 (0, 1, 0));
+    if (monster_count % 2 == 0 && boss_flag) {
+      boss.draw(VP, glm::vec3 (0, 1, 0));
     }
 
 }
@@ -102,7 +105,6 @@ void tick_input(GLFWwindow *window) {
     int space = glfwGetKey(window, GLFW_KEY_SPACE);
     int z = glfwGetKey(window, GLFW_KEY_Z);
 
-    int mouse_left = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
     if (left) {
       boat.rotation += 1;
     }
@@ -117,13 +119,11 @@ void tick_input(GLFWwindow *window) {
       boat.position.x += 0.1*cos(boat.rotation * M_PI / 180.0f);
       boat.position.z -= 0.1*sin(boat.rotation * M_PI / 180.0f);
     }
-    if (mouse_left) {
-      // cout<<"mouse_left\n";
-    }
     if (space && boat.position.y <= -1.68) {
       boat.position.y += 2;
     }
-    if (z && boat.fireball.position.x == boat.position.x) {
+    if (z && boat.fireball.position.x - boat.position.x < 0.01 && boat.fireball.position.z - boat.position.z < 0.01) {
+      // is_wind = 0;
       boat.fireball.shoot(boat.rotation, 1.5);
     }
 }
@@ -133,13 +133,12 @@ unsigned long long int time_count = 0;
 void tick_elements() {
     boat.tick();
     // water.tick();
-    // fireball.rotation += 100;
+    boat.fireball.rotation += 100;
     for (int i = 0 ; i < number_of_monsters; i++) {
       monsters[i].tick();
     }
     if (boat.fireball.position.y > -3.2 && boat.fireball.speed.y != 0) {
       boat.fireball.speed.y -= 0.1;
-      // cout<<boat.fireball.position.x<<" "<<boat.fireball.position.y<<" "<<boat.fireball.position.z<<endl;
     } else {
       boat.fireball.position = boat.position;
       boat.fireball.speed = glm::vec3 (0, 0, 0);
@@ -147,7 +146,6 @@ void tick_elements() {
     if ((time_count++) % 1000 == 0) {
       is_wind = (int)random_number(0, 4);
     }
-    // is_wind = 0;
     if (is_wind == 0) {                                     // No wind
       float angle = boat.rotation + 75;
       if (boat.sail1.rotation > angle) {
@@ -176,9 +174,9 @@ void tick_elements() {
             boat.sail2.rotation += 1;
           }
       }
-      // if (is_wind == 1)
-      //   boat.position.x += 0.01;
-      // else boat.position.x -= 0.01;
+      if (is_wind == 1)
+        boat.position.x += 0.01;
+      else boat.position.x -= 0.01;
     }
 
     else if (is_wind == 3 || is_wind == 4) {
@@ -194,13 +192,11 @@ void tick_elements() {
             boat.sail2.rotation += 1;
         }
       }
-      // if (is_wind == 3)
-      //   boat.position.z -= 0.01;
-      // else boat.position.z += 0.01;
+      if (is_wind == 3)
+        boat.position.z -= 0.01;
+      else boat.position.z += 0.01;
     }
 
-    camera_rotation_angle += 1;
-    // view = 1;
     if (view == 0) {
       up = glm::vec3(0, 1, 0);                                              //follow_view
       target.x = boat.position.x;
@@ -232,19 +228,28 @@ void tick_elements() {
     }
 
     glfwGetCursorPos(window, &cursor_x, &cursor_y);
+    // old_x = cursor_x;
+    // old_y = cursor_y;
 
     if (!glfwGetKey(window, GLFW_KEY_F)) {
       old_view = view;
       aim_flag = 0;
       // cout<<"no f\n";
     } else {
+      aim_flag = 1;
       cursor_x -= 960;
       cursor_y -= 504;
-      // cout<<cursor_x<<" "<<cursor_y<<endl;
       target.y -= cursor_y/100;
       target.z -= cursor_x/100;
-      aim_flag = 0;
-      aim.set_position(target.x - eye.x - 0.5, target.y - eye.y + 0.1, target.z - eye.z + 0.1);
+      aim.set_position(target.x - eye.x - 0.001, target.y - eye.y + 0.001, target.z - eye.z + 0.001);
+      float x_dist = target.x - eye.x;
+      float z_dist = target.z - eye.z;
+      float theta = 180.0f - atan2(z_dist,x_dist)*180.0f/M_PI;
+      int mouse_left = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
+      if (mouse_left && boat.position.x == boat.fireball.position.x) {
+        boat.fireball.set_position(eye.x, eye.y, eye.z);
+        boat.fireball.shoot(theta, 1);
+      }
     }
 
     if (boat.position.y > -1.68) {
@@ -263,31 +268,59 @@ void tick_elements() {
       if(detect_collision(boat.fireball.bounding_box(), monsters[i].bounding_box())) {
         monsters[i].health -= 20;
         cout<<"YES\n";
-        cout<<monsters[i].health<<endl;
         if (monsters[i].health == 0) {
-          monster_count += 1;
-          monsters[i].position.x = 1000;
+          for (int j = 0; j < monsters[i].number_of_gifts; j++) {
+            float temp = random_number(0, 360);
+            monsters[i].gifts[j].shoot(temp, 0.7);
+            // if (monsters[i].gifts[j].position.y > -3.2 && monsters[i].gifts[j].speed.y != 0) {
+            //   monsters[i].gifts[j].speed.y -= 0.1;
+            //   // cout<<"neeche\n";
+            // } else {
+            //   monsters[i].gifts[j].speed = glm::vec3 (0, 0, 0);
+            //   cout<<"main se\n";
+            //   monsters[i].gifts[j].position.y = -2.0;
+            // }
+            monsters[i].set_position(random_number(-50, 50), -1.7, random_number(-50, 50));
+            monsters[i].health = 100;
+            monster_count += 1;
+          }
         }
+      }
+      if (monster_count % 2 == 0 && !boss_flag) {
+        boss.set_position(random_number(boat.position.x -10, boat.position.x +10), -1.7, random_number(boat.position.z-10, boat.position.z+10));
+        boss_flag = 1;
       }
     }
 
-    for (int i = 0; i < number_of_monsters - 1 && monsters[i].health != 0; i++) {
-      float x_dist = -monsters[i].position.x + boat.position.x;
-      float z_dist = -monsters[i].position.z + boat.position.z;
-      float temp_dist = sqrt(x_dist*x_dist + z_dist*z_dist);
-      for (int j = 0; j < monsters[i].number_of_fireballs; j++) {
-        if (monsters[i].fireballs[j].position.x == monsters[i].position.x)
-          monsters[i].fireballs[j].shoot((180.0f - atan2(z_dist,x_dist)*180.0f/M_PI), temp_dist/30);
-        // cout<<atan2(x_dist,z_dist)<<endl;
-        if (monsters[i].fireballs[j].position.y > -3.2 && monsters[i].fireballs[j].speed.y != 0) {
-          monsters[i].fireballs[j].speed.y -= 0.1;
-          // cout<<boat.fireball.position.x<<" "<<boat.fireball.position.y<<" "<<boat.fireball.position.z<<endl;
-        } else {
-          monsters[i].fireballs[j].position = monsters[i].position;
-          monsters[i].fireballs[j].speed = glm::vec3 (0, 0, 0);
-        }
-        if (detect_collision(monsters[i].fireballs[j].bounding_box(), boat.bounding_box())) {
-          boat.health -= 1;
+    if (boss_flag && detect_collision(boat.fireball.bounding_box(), boss.bounding_box())) {
+      boss.health -= 20;
+      if (boss.health == 0) {
+        boss.set_position(0, -20, 0);
+        boss_flag = 0;
+      }
+      // cout<<"YYEESS\n";
+    }
+
+    for (int i = 0; i < number_of_monsters && monsters[i].health != 0; i++) {
+      if (j % 9 == 0) {
+        float x_dist = -monsters[i].position.x + boat.position.x;
+        float z_dist = -monsters[i].position.z + boat.position.z;
+        float temp_dist = sqrt(x_dist*x_dist + z_dist*z_dist);
+        for (int k = 0; k < monsters[i].number_of_fireballs; k++) {
+          if (monsters[i].fireballs[k].position.x == monsters[i].position.x)
+            monsters[i].fireballs[k].shoot((180.0f - atan2(z_dist,x_dist)*180.0f/M_PI), temp_dist/30);
+          // cout<<atan2(x_dist,z_dist)<<endl;
+          // cout<<temp_dist/30<<endl;;
+          if (monsters[i].fireballs[k].position.y > -3.2 && monsters[i].fireballs[k].speed.y != 0) {
+            monsters[i].fireballs[k].speed.y -= 0.1;
+            // cout<<boat.fireball.position.x<<" "<<boat.fireball.position.y<<" "<<boat.fireball.position.z<<endl;
+          } else {
+            monsters[i].fireballs[k].position = monsters[i].position;
+            monsters[i].fireballs[k].speed = glm::vec3 (0, 0, 0);
+          }
+          if (detect_collision(monsters[i].fireballs[k].bounding_box(), boat.bounding_box())) {
+            boat.health -= 1;
+          }
         }
       }
     }
@@ -319,7 +352,7 @@ void initGL(GLFWwindow *window, int width, int height) {
     }
     aim = Aim(target.x - eye.x + 0.1, target.y - eye.y + 0.1, target.z - eye.z + 0.1);
 
-    for (int i = 0; i < number_of_monsters - 1; i++) {
+    for (int i = 0; i < number_of_monsters; i++) {
       float x = random_number(-50, 50);
       // float y = random_number(-50, 50);
       float z = random_number(-50, 50);
@@ -331,8 +364,8 @@ void initGL(GLFWwindow *window, int width, int height) {
         monsters[i].health = 200;
       }
     }
-    monsters[number_of_monsters - 1] = Monster(2, 2, 2, 1, 2, COLOR_GREEN);
-    monsters[number_of_monsters - 1].health = 300;
+    boss = Monster(2, -20, 2, 1, 2, COLOR_GREEN);
+    boss.health = 300;
 
 
     // Create and compile our GLSL program from the shaders
@@ -400,7 +433,14 @@ void reset_screen() {
     float far = 500;
     float angle = M_PI/2;
     float aspect_ratio = float(16/9);
+    float top    = screen_center_y + 4 / screen_zoom;
+    float bottom = screen_center_y - 4 / screen_zoom;
+    float left   = screen_center_x - 4 / screen_zoom;
+    float right  = screen_center_x + 4 / screen_zoom;
+
     // float aspect_ratio = 1.0f;
-    // Matrices.projection = glm::ortho(left, right, bottom, top, 0.1f, 500.0f);
-    Matrices.projection = glm::perspective(angle, aspect_ratio, near, far);
+    if (aim_flag)
+      Matrices.projection = glm::ortho(left, right, bottom, top, 0.1f, 500.0f);
+    else
+      Matrices.projection = glm::perspective(angle, aspect_ratio, near, far);
 }

@@ -72,8 +72,8 @@ void Ball::set_position(float x, float y, float z) {
 
 void Ball::shoot(float theta, float power) {
     this->speed.x = -power*cos(theta * M_PI / 180.0f);
-    this->speed.z =  power*sin(theta * M_PI / 180.0f);
     this->speed.y =  power;
+    this->speed.z =  power*sin(theta * M_PI / 180.0f);
 }
 
 void Ball::tick() {

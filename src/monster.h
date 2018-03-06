@@ -11,7 +11,8 @@ public:
     Monster(float x, float y, float z, float scale, int type, color_t color);
     Ball center, right, left, top;
     int number_of_fireballs;
-    Ball fireballs[10], gifts[10];
+    int number_of_gifts;
+    Ball fireballs[10], gifts[50];
     float health;
     glm::vec3 position;
     float rotation;
