@@ -30,10 +30,11 @@ glm::vec3 target (0, 0, 0);
 glm::vec3 up (0, 1, 0);
 extern int view;
 extern int f;
+extern int cursor_x1_press, cursor_y1_press;
 int is_wind = 0;
 double cursor_x, cursor_y;
 double old_x, old_y;
-const int number_of_rocks = 100, number_of_monsters = 10, number_of_barrels = 100;
+const int number_of_rocks = 100, number_of_monsters = 10, number_of_barrels = 500;
 int monster_count = 0;
 time_t start = 0, total_time;
 int old_view = 0, temp_view = 0;
@@ -41,6 +42,7 @@ int aim_flag = 0;
 int boss_flag = 0;
 int is_sail = 0;
 int score = 0;
+float boost_flag = 1;
 
 Ball rocks[number_of_rocks];
 Ball water;
@@ -48,6 +50,7 @@ Boat boat;
 Aim aim;
 Monster monsters[number_of_monsters];
 Monster boss;
+Ball booster;
 Barrel barrels[number_of_barrels];
 
 Timer t60(1.0 / 60);
@@ -95,13 +98,14 @@ void draw() {
     for (int i = 0; i < number_of_monsters; i++) {
       monsters[i].draw(VP, glm::vec3 (0, 1, 0));
     }
-    if (monster_count % 3 == 0 && boss_flag && monster_count != 0) {
+    // if (monster_count % 3 == 0 && boss_flag && monster_count != 0) {
       boss.draw(VP, glm::vec3 (0, 1, 0));
       // cout<<"BOSS from draw\n";
-    }
+    // }
     for (int i = 0; i < number_of_barrels; i++) {
       barrels[i].draw(VP, glm::vec3 (0, 1, 0));
     }
+    booster.draw(VP, glm::vec3 (0, 0, 1));
 }
 
 void tick_input(GLFWwindow *window) {
@@ -113,20 +117,20 @@ void tick_input(GLFWwindow *window) {
     int z = glfwGetKey(window, GLFW_KEY_Z);
 
     if (left) {
-      if (down) boat.rotation -= 1;
-      else boat.rotation += 1;
+      if (down) boat.rotation -= 2;
+      else boat.rotation += 2;
     }
     if (right) {
-      if (down) boat.rotation += 1;
-      else boat.rotation -= 1;
+      if (down) boat.rotation += 2;
+      else boat.rotation -= 2;
     }
     if (up) {
-      boat.position.x -= 0.4*cos(boat.rotation * M_PI / 180.0f);
-      boat.position.z += 0.4*sin(boat.rotation * M_PI / 180.0f);
+      boat.position.x -= boost_flag*0.4*cos(boat.rotation * M_PI / 180.0f);
+      boat.position.z += boost_flag*0.4*sin(boat.rotation * M_PI / 180.0f);
     }
     if (down) {
-      boat.position.x += 0.4*cos(boat.rotation * M_PI / 180.0f);
-      boat.position.z -= 0.4*sin(boat.rotation * M_PI / 180.0f);
+      boat.position.x += boost_flag*0.4*cos(boat.rotation * M_PI / 180.0f);
+      boat.position.z -= boost_flag*0.4*sin(boat.rotation * M_PI / 180.0f);
     }
     if (space && boat.position.y <= -1.68) {
       boat.speed.y += 1.2;
@@ -138,18 +142,18 @@ void tick_input(GLFWwindow *window) {
     }
 }
 int rock = 0;
+
 unsigned long long int j = 0;
 unsigned long long int time_count = 0;
 void tick_elements() {
     glfwGetCursorPos(window, &cursor_x, &cursor_y);
-
+    booster.rotation += 1;
     boat.tick();
     boss.tick();
     for (int i = 0; i < number_of_barrels; i++) {
       barrels[i].tick();
     }
-    // water.tick();
-    // cout<<monster_count<<endl;
+    booster.tick();
     boat.fireball.rotation += 100;
     for (int i = 0 ; i < number_of_monsters; i++) {
       monsters[i].tick();
@@ -244,28 +248,44 @@ void tick_elements() {
       target.x = boat.position.x;
       target.z = boat.position.z;
     }
-    // else if (view == 4) {
-    //   up = glm::vec3(0, 1, 0);                                              //tower_view
-    //   eye.x = boat.position.x + 10*cos(boat.rotation * M_PI / 180.0f) ;
-    //   eye.y = 2;
-    //   eye.z = boat.position.z - 10*sin(boat.rotation * M_PI / 180.0f);
-    //   int mouse_left = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
-    //   if (mouse_left) {
-    //     cursor_x -= 960;
-    //     cursor_y -= 504;
-    //     target.y += cursor_y/5000;
-    //     target.z -= cursor_x/5000;
-    //   }
-    // }
-    glfwGetCursorPos(window, &cursor_x, &cursor_y);
+    else if (view == 4) {
+      up = glm::vec3(0, 1, 0);                                              //tower_view
+      eye.x = 10;
+      // eye.y = 10;
+      eye.z = 10;
+      // target = glm::vec3(100, 100, 100);
+      int mouse_left = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
+      // target.y += (cursor_y1_press - cursor_y)*2;
+      // target.z -= (cursor_x1_press - cursor_x)/1;
 
-    // old_x = cursor_x;
-    // old_y = cursor_y;
+      // float temp_y = cursor_y1_press - cursor_y;
+      // float temp_z = cursor_x1_press - cursor_x;
+      // float theta = M_PI - atan2(temp_z, temp_y);
+      // float target_y = 0, target_z = 0;
+      // target.y += cursor_y/100;
+      // target.z -= cursor_x/100;
+      cursor_x -= 960;
+      cursor_x1_press -= 960;
+      cursor_y -= 504;
+      cursor_y1_press -= 504;
 
+      if (mouse_left) {
+        // cursor_x -= 960;
+        // cursor_x1_press -= 960;
+        // cursor_y -= 504;
+        // cursor_y1_press -= 504;
+        target.y = (cursor_y)/100;
+        target.z = (cursor_x)/100;
+      }
+      // target.y = target_y;
+      // target.z = target_z;
+    }
+    if (boat.health <= 0) {
+      boat.speed.y -= 0.4;
+    }
     if (!glfwGetKey(window, GLFW_KEY_F)) {
       old_view = view;
       aim_flag = 0;
-      // cout<<"no f\n";
     } else {
       is_wind = 0;
       aim_flag = 0;
@@ -296,12 +316,6 @@ void tick_elements() {
       boat.position.y += 0.02*sin((++j)/7);
       boat.speed.y = 0;
     }
-    // if (boat.speed.x > 0) {
-    //   boat.speed.x -= 0.05;
-    // }
-    // if (boat.speed.y > 0) {
-    //   boat.speed.y -= 0.05;
-    // }
     for (int i = 0; i < number_of_rocks; i++) {
       if (detect_collision(boat.bounding_box(), rocks[i].bounding_box())) {
         boat.position.x += 2*cos(boat.rotation*M_PI / 180.0f);
@@ -320,6 +334,7 @@ void tick_elements() {
             monsters[i].gifts[j].shoot(temp, 0.7);
           }
           monster_count += 1;
+          score += 20;
         }
       }
     }
@@ -327,35 +342,45 @@ void tick_elements() {
     for (int i = 0; i < number_of_monsters; i++) {
       for (int j = 0; j < monsters[i].number_of_gifts; j++) {
         if(detect_collision(boat.bounding_box(), monsters[i].gifts[j].bounding_box())) {
-            // cout<<"YESYESYES\n";
-            score += 3;
             boat.health += 2;
-            // monsters[i].gifts[j].speed.y += 20;
             monsters[i].gifts[j].position = monsters[i].position;
         }
       }
     }
 
     if (monster_count % 3 == 0 && !boss_flag && monster_count != 0) {
-      cout<<"BOSS\n";
-      boss.speed.y = 0;
-      boss.set_position(random_number(boat.position.x + 5, boat.position.x +10), -1.7, random_number(boat.position.z + 5, boat.position.z+10));
-      // cout<<boss.position.x<<" "<<boss.position.y<<" "<<boss.position.z<<endl;
+      boss.set_position(random_number(boat.position.x - 10, boat.position.x -5 ), -5, random_number(boat.position.z -10, boat.position.z-5));
+      boss.speed.y = 1;
       boss_flag = 1;
     }
-
+    if (boss.position.y >= -1.7) {
+      boss.speed.y = 0;
+      boss.position.y += 0.1*cos((j/7));
+    }
     if (boss_flag && detect_collision(boat.fireball.bounding_box(), boss.bounding_box())) {
+      // cout<<"BOSS\n";
       boss.health -= 20;
       if (boss.health == 0) {
+        // boss.speed.y = -0.5;
+        booster.set_position(boss.position.x, boss.position.y, boss.position.z);
         monster_count += 1;
         boss.speed.y = -0.3;
         for (int i = 0; i < boss.number_of_gifts; i++) {
           float temp = random_number(0, 360);
-          boss.gifts[j].shoot(temp, 0.7);
+          boss.gifts[i].shoot(temp, 0.7);
         }
-        // boss.set_position(0, -20, 0);
         boss_flag = 0;
       }
+    }
+    unsigned long long boost_counter = 0;
+    if (detect_collision(boat.bounding_box(), booster.bounding_box())) {
+      // cout<<"start\n";
+      boost_flag = 4;
+      boost_counter = j;
+      booster.set_position(100, -8, 100);
+    }
+    if (j - boost_counter == 1000) {
+      boost_flag = 1;
     }
 
 
@@ -364,12 +389,14 @@ void tick_elements() {
         float x_dist = -monsters[i].position.x + boat.position.x;
         float z_dist = -monsters[i].position.z + boat.position.z;
         float temp_dist = sqrt(x_dist*x_dist + z_dist*z_dist);
+        float theta = 180.0f - atan2(z_dist,x_dist)*180.0f/M_PI;
+        monsters[i].rotation = theta;
+        // cout<<sin(2*theta*M_PI/180)<<endl;
         for (int k = 0; k < monsters[i].number_of_fireballs; k++) {
-          if (monsters[i].fireballs[k].position.x == monsters[i].position.x)
-            monsters[i].fireballs[k].shoot((180.0f - atan2(z_dist,x_dist)*180.0f/M_PI), temp_dist/30);
+          if (monsters[i].fireballs[k].position.x == monsters[i].position.x && temp_dist < 60)
+            monsters[i].fireballs[k].shoot(theta, temp_dist/30);
           if (monsters[i].fireballs[k].position.y > -3.2 && monsters[i].fireballs[k].speed.y != 0) {
             monsters[i].fireballs[k].speed.y -= 0.1;
-            // cout<<boat.fireball.position.x<<" "<<boat.fireball.position.y<<" "<<boat.fireball.position.z<<endl;
           } else {
             monsters[i].fireballs[k].position = monsters[i].position;
             monsters[i].fireballs[k].speed = glm::vec3 (0, 0, 0);
@@ -388,6 +415,7 @@ void tick_elements() {
       }
     }
 
+    // cout<<boost_flag<<endl;
 
     char s[100];
     total_time = time(0) - start;
@@ -429,6 +457,7 @@ void initGL(GLFWwindow *window, int width, int height) {
     }
 
     boss = Monster(2, -20, 2, 1, 2);
+    booster = Ball (100, -5, 1000, 0.6, 0.6, 0.6, COLOR_YELLOW);
 
 
     // Create and compile our GLSL program from the shaders

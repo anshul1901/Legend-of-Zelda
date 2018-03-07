@@ -26,7 +26,7 @@ Monster::Monster(float x, float y, float z, float scale, int type) {
       this->health = 200;
     } else {
       number_of_fireballs = 4, size_of_fireball = 0.4;
-      number_of_gifts = 20;
+      number_of_gifts = 0;
       color = COLOR_BLACK;
       this->health = 300;
     }
@@ -52,7 +52,6 @@ void Monster::draw(glm::mat4 VP, glm::vec3 axis) {
     this->right.draw(VP, axis);
     this->left.draw(VP, axis);
     this->top.draw(VP, axis);
-
     for (int i = 0; i < number_of_fireballs; i++) {
       this->fireballs[i].draw(VP, glm::vec3 (1, 1, 1));
     }
@@ -74,6 +73,12 @@ void Monster::tick() {
     this->left.set_position(this->position.x, this->position.y, this->position.z+1.5*size);
     this->right.set_position(this->position.x, this->position.y, this->position.z - 1.5*size);
     this->top.set_position(this->position.x, this->position.y+1.5*size, this->position.z);
+
+    this->center.rotation = this->rotation;
+    this->left.rotation = this->rotation;
+    this->right.rotation = this->rotation;
+    this->top.rotation = this->rotation;
+
     for (int i = 0; i < number_of_fireballs; i++) {
       this->fireballs[i].tick();
     }
@@ -81,7 +86,7 @@ void Monster::tick() {
       this->gifts[i].tick();
       if (this->gifts[i].speed.y != 0 && this->gifts[i].position.y > -3.1) {
         this->gifts[i].speed.y -= 0.07;
-        printf("%f %f %f\n", this->gifts[i].position.x, this->gifts[i].position.y, this->gifts[i].position.z);
+        // printf("%f %f %f\n", this->gifts[i].position.x, this->gifts[i].position.y, this->gifts[i].position.z);
 
       } else if (this->gifts[i].position.y < -1.7){
         this->gifts[i].speed = glm::vec3 (0, 0, 0);
@@ -89,7 +94,7 @@ void Monster::tick() {
         this->gifts[i].tick();
         // this->gifts[i].position.x = 0;
         // this->gifts[i].position.z = 0;
-        printf("%f %f %f\n", this->gifts[i].position.x, this->gifts[i].position.y, this->gifts[i].position.z);
+        // printf("%f %f %f\n", this->gifts[i].position.x, this->gifts[i].position.y, this->gifts[i].position.z);
       }
     }
     if (this->health == 0) {

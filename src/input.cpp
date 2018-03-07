@@ -67,15 +67,24 @@ void keyboardChar(GLFWwindow *window, unsigned int key) {
 }
 extern int mouse_left;
 extern glm::vec3 target, eye;
+double cursor_x1, cursor_y1;
+double cursor_x1_press, cursor_y1_press;
+
 /* Executed when a mouse button is pressed/released */
 void mouseButton(GLFWwindow *window, int button, int action, int mods) {
+  glfwGetCursorPos(window, &cursor_x1, &cursor_y1);
+  // cout<<cursor_x1<<" "<<cursor_y1<<endl;
+
     switch (button) {
     case GLFW_MOUSE_BUTTON_LEFT:
         if (action == GLFW_PRESS) {
-            // Do something
+
             return;
         } else if (action == GLFW_RELEASE) {
-
+            // cout<<"release\n";
+            cursor_x1_press = cursor_x1;
+            cursor_y1_press = cursor_y1;
+            // cout<<cursor_x1<<" release "<<cursor_y1<<endl;
         }
         break;
     // case GLFW_MOUSE_BUTTON_RIGHT:
@@ -90,4 +99,16 @@ void mouseButton(GLFWwindow *window, int button, int action, int mods) {
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
     // Do something
+    if (view == 4) {
+      // float x = target.x - eye.x;
+      // float y = target.y - eye.y;
+      // float z = target.z - eye.z;
+      // float x_z = atan2(x, z) * 180.0f / M_PI;
+      // float y_z = atan2(y, z) * 180.0f / M_PI;
+      eye.y -= (yoffset)*1;
+      // eye.x -= (yoffset)*cos(x_z);
+      // eye.z -= (yoffset)*sin(x_z);
+      // cout<<cos(x_z)<<" "<<sin(x_z)<<"\n";
+      reset_screen();
+  }
 }
