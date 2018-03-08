@@ -44,6 +44,15 @@ int is_sail = 0;
 int score = 0;
 float boost_flag = 1;
 
+ao_device *device;
+ao_sample_format format;
+int default_driver;
+char *bufferN, *bufferH, *bufferL;
+int buf_size, sounder;
+int sampleN, sampleH, sampleL;
+float freq = 440.0;
+unsigned long long int back_counter = 0;
+
 Ball rocks[number_of_rocks];
 Ball water;
 Boat boat;
@@ -280,9 +289,6 @@ void tick_elements() {
       // target.y = target_y;
       // target.z = target_z;
     }
-    if (boat.health <= 0) {
-      boat.speed.y -= 0.4;
-    }
     if (!glfwGetKey(window, GLFW_KEY_F)) {
       old_view = view;
       aim_flag = 0;
@@ -308,13 +314,20 @@ void tick_elements() {
         boat.fireball.shoot(theta, abs(cursor_y)/500);
       }
     }
-
-    if (boat.position.y > -1.68) {
+    if ( boat.health > 0) {
+      if (boat.position.y > -1.68) {
+        boat.speed.y -= 0.1;
+      }
+      else {
+        boat.position.y += 0.02*sin((++j)/7);
+        boat.speed.y = 0;
+      }
+    } else {
       boat.speed.y -= 0.1;
     }
-    else {
-      boat.position.y += 0.02*sin((++j)/7);
-      boat.speed.y = 0;
+    if (boat.position.y < -4) {
+      cout<<endl<<endl<<"Final score: "<< score<<endl<<endl;
+      quit(window);
     }
     for (int i = 0; i < number_of_rocks; i++) {
       if (detect_collision(boat.bounding_box(), rocks[i].bounding_box())) {
@@ -327,6 +340,7 @@ void tick_elements() {
     for (int i = 0; i < number_of_monsters; i++) {
       if(detect_collision(boat.fireball.bounding_box(), monsters[i].bounding_box())) {
         monsters[i].health -= 20;
+        boat.fireball.set_position(boat.position.x, boat.position.y, boat.position.z);
         // cout<<"YES\n";
         if (monsters[i].health == 0) {
           for (int j = 0; j < monsters[i].number_of_gifts; j++) {
@@ -349,7 +363,7 @@ void tick_elements() {
     }
 
     if (monster_count % 3 == 0 && !boss_flag && monster_count != 0) {
-      boss.set_position(random_number(boat.position.x - 10, boat.position.x -5 ), -5, random_number(boat.position.z -10, boat.position.z-5));
+      boss.set_position(random_number(boat.position.x - 50, boat.position.x -25 ), -5, random_number(boat.position.z -50, boat.position.z-25));
       boss.speed.y = 1;
       boss_flag = 1;
     }
@@ -382,7 +396,30 @@ void tick_elements() {
     if (j - boost_counter == 1000) {
       boost_flag = 1;
     }
-
+    if (boss_flag) {
+      float x_dist = -boss.position.x + boat.position.x;
+      float z_dist = -boss.position.z + boat.position.z;
+      float temp_dist = sqrt(x_dist*x_dist + z_dist*z_dist);
+      float theta = 180.0f - atan2(z_dist,x_dist)*180.0f/M_PI;
+      // boss.speed.x += 0.2*cos(theta * M_PI / 180);
+      // boss.speed.z += 0.2*sin(theta * M_PI / 180);
+      boss.rotation = theta;
+      // cout<<sin(2*theta*M_PI/180)<<endl;
+      for (int k = 0; k < boss.number_of_fireballs; k++) {
+        if (boss.fireballs[k].position.x == boss.position.x && temp_dist < 60)
+          boss.fireballs[k].shoot(theta, temp_dist/30);
+        if (boss.fireballs[k].position.y > -3.2 && boss.fireballs[k].speed.y != 0) {
+          boss.fireballs[k].speed.y -= 0.1;
+        } else {
+          boss.fireballs[k].position = boss.position;
+          boss.fireballs[k].speed = glm::vec3 (0, 0, 0);
+        }
+        if (detect_collision(boss.fireballs[k].bounding_box(), boat.bounding_box())) {
+          boat.health -= 1;
+          boss.fireballs[k].set_position(boss.position.x, boss.position.y, boss.position.z);
+        }
+      }
+    }
 
     for (int i = 0; i < number_of_monsters && monsters[i].health != 0; i++) {
       if (j % 2 == 0) {
@@ -403,6 +440,7 @@ void tick_elements() {
           }
           if (detect_collision(monsters[i].fireballs[k].bounding_box(), boat.bounding_box())) {
             boat.health -= 1;
+            monsters[i].fireballs[k].set_position(monsters[i].position.x, monsters[i].position.y, monsters[i].position.z);
           }
         }
       }
@@ -421,6 +459,31 @@ void tick_elements() {
     total_time = time(0) - start;
     sprintf(s, "Health: %d | Score: %d | Time: %d", boat.health, score, (int)total_time);
     glfwSetWindowTitle(window, s);
+
+    color_t blue = { 185, 245, 246 }, brown = { 0, 16, 0 };
+  if (((back_counter++)/1200)%2 == 0) {
+    if(COLOR_BACKGROUND.r != brown.r) {
+      COLOR_BACKGROUND.r--;
+    }
+    if(COLOR_BACKGROUND.g != brown.g) {
+      COLOR_BACKGROUND.g--;
+    }
+    if(COLOR_BACKGROUND.b != brown.b) {
+      COLOR_BACKGROUND.b--;
+    }
+  } else {
+    if(COLOR_BACKGROUND.r != blue.r) {
+      COLOR_BACKGROUND.r++;
+    }
+    if(COLOR_BACKGROUND.g != blue.g) {
+      COLOR_BACKGROUND.g++;
+    }
+    if(COLOR_BACKGROUND.b != blue.b) {
+      COLOR_BACKGROUND.b++;
+    }
+  }
+  glClearColor (COLOR_BACKGROUND.r / 256.0, COLOR_BACKGROUND.g / 256.0, COLOR_BACKGROUND.b / 256.0, 0.0f);
+
 
 }
 
@@ -469,7 +532,7 @@ void initGL(GLFWwindow *window, int width, int height) {
     reshapeWindow (window, width, height);
 
     // Background color of the scene
-    glClearColor (COLOR_BACKGROUND.r / 256.0, COLOR_BACKGROUND.g / 256.0, COLOR_BACKGROUND.b / 256.0, 0.0f); // R, G, B, A
+    // glClearColor (COLOR_BACKGROUND.r / 256.0, COLOR_BACKGROUND.g / 256.0, COLOR_BACKGROUND.b / 256.0, 0.0f); // R, G, B, A
     glClearDepth (1.0f);
 
     glEnable (GL_DEPTH_TEST);
@@ -487,12 +550,53 @@ int main(int argc, char **argv) {
     int width  = 1920;
     int height = 1080;
 
+    ao_initialize();
+    default_driver = ao_default_driver_id();
+    memset(&format, 0, sizeof(format));
+    format.bits = 16;
+    format.channels = 2;
+    format.rate = 44100;
+    format.byte_format = AO_FMT_LITTLE;
+    device = ao_open_live(default_driver, &format, NULL /* no options */);
+    if (device == NULL) {
+  		fprintf(stderr, "Error opening device.\n");
+  		return 1;
+  	}
+    window = initGLFW(width, height);
+    buf_size = format.bits/8 * format.channels * format.rate;
+    bufferN = (char*)calloc(buf_size,
+        sizeof(char));
+    bufferH = (char*)calloc(buf_size,
+        sizeof(char));
+    bufferL = (char*)calloc(buf_size,
+        sizeof(char));
+
+    for (int i = 0; i < format.rate; i++) {
+      sampleN = (int)(0.45 * 32768.0 *
+        sin(2 * M_PI * freq * ((float) i/format.rate)));
+      sampleH = (int)(0.75 * 32768.0 *
+        sin(2 * M_PI * freq*2 * ((float) i/format.rate)));
+      sampleL = (int)(0.75 * 32768.0 *
+        sin(2 * M_PI * freq*(0.5) * ((float) i/format.rate)));
+
+      /* Put the same stuff in left and right channel */
+      bufferN[4*i] = bufferN[4*i+2] = sampleN & 0xff;
+      bufferN[4*i+1] = bufferN[4*i+3] = (sampleN >> 8) & 0xff;
+
+      bufferH[4*i] = bufferH[4*i+2] = sampleH & 0xff;
+      bufferH[4*i+1] = bufferH[4*i+3] = (sampleH >> 8) & 0xff;
+
+      bufferL[4*i] = bufferL[4*i+2] = sampleL & 0xff;
+      bufferL[4*i+1] = bufferL[4*i+3] = (sampleL >> 8) & 0xff;
+    }
+
     window = initGLFW(width, height);
 
     initGL (window, width, height);
 
     /* Draw in loop */
     start = time(0);
+    ao_play(device, bufferN + (sounder++)%buf_size, 1);
     while (!glfwWindowShouldClose(window)) {
         // Process timers
 

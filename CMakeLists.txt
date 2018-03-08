@@ -17,9 +17,9 @@ pkg_check_modules(GL REQUIRED gl)
 include_directories(${GL_INCLUDE_DIRS})
 target_link_libraries (${PROJECT_NAME} ${GL_LIBRARIES})
 
-# pkg_check_modules(AO REQUIRED ao)
-# include_directories(${AO_INCLUDE_DIRS})
-# target_link_libraries (${PROJECT_NAME} ${AO_LIBRARIES})
+pkg_check_modules(AO REQUIRED ao)
+include_directories(${AO_INCLUDE_DIRS})
+target_link_libraries (${PROJECT_NAME} ${AO_LIBRARIES})
 
 # pkg_check_modules(LIBMPG123 REQUIRED libmpg123)
 # include_directories(${LIBMPG123_INCLUDE_DIRS})

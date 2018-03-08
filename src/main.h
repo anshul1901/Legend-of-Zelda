@@ -2,6 +2,7 @@
 #define MAIN_H
 
 #include <iostream>
+#include <string.h>
 #include <cmath>
 #include <fstream>
 #include <vector>
@@ -13,6 +14,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+
+#include <ao/ao.h>
 
 struct color_t {
     int r;
@@ -87,6 +90,6 @@ extern const color_t COLOR_BLUE;
 extern const color_t COLOR_BROWN;
 extern const color_t COLOR_PURPLE;
 extern const color_t COLOR_YELLOW;
-extern const color_t COLOR_BACKGROUND;
+extern color_t COLOR_BACKGROUND;
 
 #endif
